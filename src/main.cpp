@@ -51,9 +51,16 @@ const char fallback_html[] PROGMEM = R"rawliteral(
 
   <button onclick="sendWifi()">🔄 Перезавантажити ESP32</button>
 
+  <div id="status">Очікування...</div>
+
  
   <script>
 const ws = new WebSocket("ws://192.168.4.1/ws");
+
+ws.onmessage = function(event) {
+       // Цей код оновлює текст на екрані, коли ESP надсилає статус
+       document.getElementById("status").innerText = event.data;
+    };
 
 function sendWifi() {
   const ssid = document.getElementById("ssid").value;
