@@ -259,11 +259,14 @@ buttonElement.addEventListener('click', function () {
 
 
 function rebootESP() {
-    // Питаємо підтвердження, щоб випадково не натиснути
     if (confirm("Ви точно хочете перезавантажити пристрій?")) {
-        console.log("Sending RESET command...");
-        websocket.send("RESET");
-        // Можна також перезавантажити сторінку через 3 секунди
-        setTimeout(() => location.reload(), 3000);
+        // Перевіряємо, чи підключений сокет (стан OPEN = 1)
+        if (websocket && websocket.readyState === WebSocket.OPEN) {
+            console.log("Sending RESET command...");
+            websocket.send("RESET");
+            setTimeout(() => location.reload(), 3000);
+        } else {
+            alert("Помилка: Немає з'єднання з ESP32!");
+        }
     }
 }
