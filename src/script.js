@@ -1,10 +1,6 @@
-var gateway = `ws://${window.location.hostname}/ws`;
+// var gateway = `ws://${window.location.hostname}/ws`;
 // var gateway = `ws://${window.location.hostname}:8765/ws`;
-<<<<<<< HEAD
-// var gateway = `ws://192.168.0.176/ws`;
-=======
-//var gateway = `ws://192.168.0.176/ws`;
->>>>>>> 3c50ba42f589ca076bd86b6e792893c39b7f94c5
+var gateway = `ws://192.168.0.176/ws`;
 
 
 var websocket;
@@ -240,7 +236,7 @@ function createKnob(elementId, displayId, min, max, startVal, onChangeCallback) 
         knob.textContent = value;
         display.textContent = (elementId === 'knobY' ? '+/- ' : '') + value;
     }
-<<<<<<< HEAD
+
 }
 
 // 1. Знаходимо елементи на сторінці
@@ -260,7 +256,14 @@ buttonElement.addEventListener('click', function () {
 
 
 });
-=======
 
+
+function rebootESP() {
+    // Питаємо підтвердження, щоб випадково не натиснути
+    if (confirm("Ви точно хочете перезавантажити пристрій?")) {
+        console.log("Sending RESET command...");
+        websocket.send("RESET");
+        // Можна також перезавантажити сторінку через 3 секунди
+        setTimeout(() => location.reload(), 3000);
+    }
 }
->>>>>>> 3c50ba42f589ca076bd86b6e792893c39b7f94c5
