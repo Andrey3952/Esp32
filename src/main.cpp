@@ -5,13 +5,16 @@
 #include <ESPAsyncWebServer.h>
 #include <LittleFS.h>
 #include <HTTPClient.h>
+#include <ArduinoJson.h>
 
 const int pin_SCLK = 18;
 const int pin_MISO = 4;
 const int pin_MOSI = 23;
 const int pin_SS = 5;
-const char *ssid = "TP-Link";        // Ваша назва WiFi
-const char *password = "9999999999"; // Ваш пароль WiFi
+char customSSID[32] = "";
+char customPass[32] = "";
+const char *ssidAR = "ESP32_AP";
+const char *passwordAR = "12345678";
 // https://raw.githubusercontent.com/Andrey3952/Esp32/main/src/
 
 const String gh_base = "https://raw.githubusercontent.com/Andrey3952/Esp32/main/src/";
@@ -23,6 +26,57 @@ const String file_js = "script.js";
 AsyncWebServer server(80);
 // Створюємо об'єкт WebSocket на шляху /ws
 AsyncWebSocket ws("/ws");
+
+const char fallback_html[] PROGMEM = R"rawliteral(
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset='utf-8'>
+  <title>ESP Offline</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 50px; }
+    h1 { color: #e74c3c; }
+  </style>
+</head>
+<body>
+  <h1>Увага: Немає зв'язку з GitHub</h1>
+  <p>Не вдалося завантажити оновлення.</p>
+  <p>Це резервна сторінка з пам'яті ESP32.</p>
+  <p>Привіт з ESP32!</p>
+
+    <input type="text" id="ssid" placeholder="ssid">
+    <input type="text" id="pass" placeholder="pass">
+
+  <button onclick="rebootESP()">🔄 Перезавантажити ESP32</button>
+
+ 
+  <script>
+const ws = new WebSocket("ws://192.168.4.1/ws");
+
+function sendWifi() {
+  const ssid = document.getElementById("ssid").value;
+  const pass = document.getElementById("pass").value;
+
+  if (!ssid) {
+    alert("SSID не може бути порожнім");
+    return;
+  }
+
+  if (ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({
+      line1: ssid,
+      line2: pass
+    }));
+  } else {
+    alert("WebSocket не підключений");
+  }
+}
+</script>
+
+ 
+</body>
+</html>
+)rawliteral";
 
 bool downloadFile(String filename)
 {
@@ -60,6 +114,46 @@ bool downloadFile(String filename)
   return false;
 }
 
+void startUpdateProcess()
+{
+  // Перемикаємо в режим AP+STA, щоб не розірвати зв'язок з телефоном/компом
+  WiFi.mode(WIFI_AP_STA);
+  WiFi.begin(customSSID, customPass);
+
+  ws.textAll("Підключення до " + String(customSSID) + "...");
+
+  int i = 0;
+  while (WiFi.status() != WL_CONNECTED && i < 20)
+  {
+    delay(500);
+    i++;
+  }
+
+  if (WiFi.status() == WL_CONNECTED)
+  {
+    ws.textAll("WiFi OK! Качаємо файли...");
+
+    bool ok1 = downloadFile(file_html);
+    bool ok2 = downloadFile(file_css);
+    bool ok3 = downloadFile(file_js);
+
+    if (ok1 && ok2 && ok3)
+    {
+      ws.textAll("Успіх! Перезавантаження...");
+      delay(2000);
+      ESP.restart();
+    }
+    else
+    {
+      ws.textAll("Помилка скачування!");
+    }
+  }
+  else
+  {
+    ws.textAll("Не вдалося підключитись до WiFi!");
+  }
+}
+
 // --- Функція обробки подій WebSocket ---
 void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type,
              void *arg, uint8_t *data, size_t len)
@@ -75,19 +169,39 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType 
     break;
 
   case WS_EVT_DATA:
-    // Обробка вхідних даних від браузера
     AwsFrameInfo *info = (AwsFrameInfo *)arg;
-    // Перевіряємо, чи це текст і чи повідомлення повне
     if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT)
     {
-      data[len] = 0; // Завершуємо рядок нульовим символом
+      data[len] = 0;
       String message = (char *)data;
 
-      // Якщо прийшла команда RESET
       if (message == "RESET")
       {
         Serial.println("Reboot command received!");
-        ESP.restart(); // <--- ПЕРЕЗАВАНТАЖЕННЯ
+        ESP.restart();
+      }
+      else
+      {
+        // --- ТУТ БУЛА ПОМИЛКА ---
+        StaticJsonDocument<200> doc;
+        // 1. Парсимо JSON
+        DeserializationError error = deserializeJson(doc, message);
+
+        if (!error)
+        {
+          // 2. Зчитуємо дані
+          const char *l1 = doc["line1"];
+          const char *l2 = doc["line2"];
+
+          if (l1 && l2)
+          {
+            strlcpy(customSSID, l1, sizeof(customSSID));
+            strlcpy(customPass, l2, sizeof(customPass));
+
+            // 3. ЗАПУСКАЄМО ПРОЦЕС
+            startUpdateProcess();
+          }
+        }
       }
     }
     break;
@@ -98,36 +212,44 @@ void setup()
 {
   Serial.begin(115200);
 
+  // 1. Монтуємо файлову систему
   if (!LittleFS.begin(true))
-  { // true = форматувати, якщо не вдалося змонтувати
-    Serial.println("LittleFS Mount Failed");
+  {
+    Serial.println("Mount Failed");
     return;
   }
 
+  // 2. Налаштування SPI
   pinMode(pin_SS, OUTPUT);
   digitalWrite(pin_SS, HIGH);
   SPI.begin(pin_SCLK, pin_MISO, pin_MOSI, pin_SS);
   SPI.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE0));
 
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(1000);
-    Serial.println("Connecting to WiFi...");
-  }
-  Serial.println(WiFi.localIP());
+  // 3. Запускаємо власну точку доступу (щоб можна було зайти)
+  WiFi.mode(WIFI_AP);
+  WiFi.softAP(ssidAR, passwordAR);
+  Serial.print("AP IP: ");
+  Serial.println(WiFi.softAPIP());
 
-  Serial.println("Updating site from GitHub...");
-  downloadFile(file_html);
-  downloadFile(file_css);
-  downloadFile(file_js);
-  Serial.println("Update done.");
+  // 4. Перевіряємо, чи є файли сайту
+  bool filesExist = LittleFS.exists("/index.html") && LittleFS.exists("/style.css") && LittleFS.exists("/script.js");
 
   ws.onEvent(onEvent);
   server.addHandler(&ws);
 
-  server.serveStatic("/", LittleFS, "/").setDefaultFile("index.html");
-  // Запуск сервера
+  // 5. Вирішуємо, що показувати
+  if (filesExist)
+  {
+    Serial.println("Starting Normal Mode");
+    server.serveStatic("/", LittleFS, "/").setDefaultFile("index.html");
+  }
+  else
+  {
+    Serial.println("Starting Update Mode");
+    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
+              { request->send(200, "text/html", fallback_html); });
+  }
+
   server.begin();
 }
 
