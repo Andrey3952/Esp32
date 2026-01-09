@@ -3,32 +3,62 @@
 #include <WiFi.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
+#include <LittleFS.h>
+#include <HTTPClient.h>
 
 const int pin_SCLK = 18;
 const int pin_MISO = 4;
 const int pin_MOSI = 23;
 const int pin_SS = 5;
-const char *ssid = "2.4G";           // Ваша назва WiFi
+const char *ssid = "TP-Link";        // Ваша назва WiFi
 const char *password = "9999999999"; // Ваш пароль WiFi
+// https://raw.githubusercontent.com/Andrey3952/Esp32/main/src/
 
-// --- 1. Оголошуємо зовнішні ресурси (те, що прописали в platformio.ini) ---
-// index.html
-extern const char index_html_start[] asm("_binary_src_index_html_start");
-extern const char index_html_end[] asm("_binary_src_index_html_end");
+const String gh_base = "https://raw.githubusercontent.com/Andrey3952/Esp32/main/src/";
+const String file_html = "index.html";
+const String file_css = "style.css";
+const String file_js = "script.js";
 
-// style.css
-extern const char style_css_start[] asm("_binary_src_style_css_start");
-extern const char style_css_end[] asm("_binary_src_style_css_end");
-
-// script.js
-extern const char script_js_start[] asm("_binary_src_script_js_start");
-extern const char script_js_end[] asm("_binary_src_script_js_end");
 // Створюємо об'єкт сервера на порту 80
 AsyncWebServer server(80);
 // Створюємо об'єкт WebSocket на шляху /ws
 AsyncWebSocket ws("/ws");
 
-// unsigned long timerDelay = 100; // Відправляти дані кожні 100 мс
+bool downloadFile(String filename)
+{
+  String url = gh_base + filename;
+  Serial.println("Downloading: " + url);
+
+  HTTPClient http;
+  WiFiClientSecure client;
+  client.setInsecure(); // Ігноруємо SSL сертифікати (найпростіший спосіб для GitHub)
+
+  if (http.begin(client, url))
+  {
+    int httpCode = http.GET();
+    if (httpCode == HTTP_CODE_OK)
+    {
+      // Відкриваємо файл для запису
+      File file = LittleFS.open("/" + filename, "w");
+      if (file)
+      {
+        // Записуємо потік даних з інтернету прямо в файл
+        http.writeToStream(&file);
+        file.close();
+        Serial.println("File saved: " + filename);
+        http.end();
+        return true;
+      }
+    }
+    else
+    {
+      Serial.printf("HTTP Error: %d\n", httpCode);
+    }
+    http.end();
+  }
+  Serial.println("Download failed!");
+  return false;
+}
 
 // --- Функція обробки подій WebSocket ---
 void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type,
@@ -47,6 +77,13 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType 
 void setup()
 {
   Serial.begin(115200);
+
+  if (!LittleFS.begin(true))
+  { // true = форматувати, якщо не вдалося змонтувати
+    Serial.println("LittleFS Mount Failed");
+    return;
+  }
+
   pinMode(pin_SS, OUTPUT);
   digitalWrite(pin_SS, HIGH);
   SPI.begin(pin_SCLK, pin_MISO, pin_MOSI, pin_SS);
@@ -60,32 +97,16 @@ void setup()
   }
   Serial.println(WiFi.localIP());
 
+  Serial.println("Updating site from GitHub...");
+  downloadFile(file_html);
+  downloadFile(file_css);
+  downloadFile(file_js);
+  Serial.println("Update done.");
+
   ws.onEvent(onEvent);
   server.addHandler(&ws);
 
-  // 1. HTML
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
-    // ВІДНІМАЄМО 1, щоб прибрати нульовий байт
-    size_t size = (index_html_end - index_html_start) - 1; 
-    AsyncWebServerResponse *response = request->beginResponse(200, "text/html", (uint8_t*)index_html_start, size);
-    request->send(response); });
-
-  // 2. CSS
-  server.on("/style.css", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
-    // ВІДНІМАЄМО 1
-    size_t size = (style_css_end - style_css_start) - 1; 
-    AsyncWebServerResponse *response = request->beginResponse(200, "text/css", (uint8_t*)style_css_start, size);
-    request->send(response); });
-
-  // 3. JS (Тут помилка була критичною)
-  server.on("/script.js", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
-    // ВІДНІМАЄМО 1
-    size_t size = (script_js_end - script_js_start) - 1; 
-    AsyncWebServerResponse *response = request->beginResponse(200, "application/javascript", (uint8_t*)script_js_start, size);
-    request->send(response); });
+  server.serveStatic("/", LittleFS, "/").setDefaultFile("index.html");
   // Запуск сервера
   server.begin();
 }

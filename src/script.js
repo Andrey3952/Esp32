@@ -1,6 +1,6 @@
-// var gateway = `ws://${window.location.hostname}/ws`;
+var gateway = `ws://${window.location.hostname}/ws`;
 // var gateway = `ws://${window.location.hostname}:8765/ws`;
-var gateway = `ws://192.168.0.176/ws`;
+// var gateway = `ws://192.168.0.176/ws`;
 
 
 var websocket;
@@ -23,6 +23,7 @@ var threshold = 127;
 let num = Math.floor(Math.random() * 256);
 
 function renderLoop() {
+
     if (needsUpdate && myChart) {
         myChart.update('none'); // Малюємо тільки якщо є нові дані
         needsUpdate = false;    // Скидаємо прапорець
@@ -131,17 +132,6 @@ function initWebSocket() {
                 // 3. Зберігаємо поточне значення як "минуле" для наступного кроку
                 prevVal = dataVal;
 
-                if (Tbt == 1) {
-                    maxDataPoints = 1;
-                    for (let i = 1; i < Tc; i++) {
-                        maxDataPoints += cu;
-                    }
-                    Tbt = 0;
-                }
-
-
-
-
 
                 // ---------------------------
 
@@ -247,3 +237,21 @@ function createKnob(elementId, displayId, min, max, startVal, onChangeCallback) 
         display.textContent = (elementId === 'knobY' ? '+/- ' : '') + value;
     }
 }
+
+// 1. Знаходимо елементи на сторінці
+const inputElement = document.getElementById('InputT');
+const buttonElement = document.getElementById('BtnT');
+
+// 2. Додаємо "слухача" подій на кнопку
+buttonElement.addEventListener('click', function () {
+
+    const Tc = Number(inputElement.value);
+
+    maxDataPoints = 1;
+    for (let i = 1; i < Tc; i++) {
+        maxDataPoints += cu;
+    }
+    Tbt = 0;
+
+
+});
