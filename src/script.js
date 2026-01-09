@@ -1,6 +1,10 @@
 var gateway = `ws://${window.location.hostname}/ws`;
 // var gateway = `ws://${window.location.hostname}:8765/ws`;
+<<<<<<< HEAD
 // var gateway = `ws://192.168.0.176/ws`;
+=======
+//var gateway = `ws://192.168.0.176/ws`;
+>>>>>>> 3c50ba42f589ca076bd86b6e792893c39b7f94c5
 
 
 var websocket;
@@ -236,6 +240,7 @@ function createKnob(elementId, displayId, min, max, startVal, onChangeCallback) 
         knob.textContent = value;
         display.textContent = (elementId === 'knobY' ? '+/- ' : '') + value;
     }
+<<<<<<< HEAD
 }
 
 // 1. Знаходимо елементи на сторінці
@@ -255,3 +260,7 @@ buttonElement.addEventListener('click', function () {
 
 
 });
+=======
+
+}
+>>>>>>> 3c50ba42f589ca076bd86b6e792893c39b7f94c5
