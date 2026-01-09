@@ -21,6 +21,7 @@ const String gh_base = "https://raw.githubusercontent.com/Andrey3952/Esp32/main/
 const String file_html = "index.html";
 const String file_css = "style.css";
 const String file_js = "script.js";
+const String chart_js = "chart.js";
 
 bool shouldUpdate = false;
 
@@ -145,8 +146,9 @@ void startUpdateProcess()
     bool ok1 = downloadFile(file_html);
     bool ok2 = downloadFile(file_css);
     bool ok3 = downloadFile(file_js);
+    bool ok4 = downloadFile(chart_js);
 
-    if (ok1 && ok2 && ok3)
+    if (ok1 && ok2 && ok3 && ok4)
     {
       ws.textAll("Успіх! Перезавантаження...");
       delay(2000);
