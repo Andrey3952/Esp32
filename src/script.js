@@ -36,16 +36,6 @@ window.addEventListener('load', function () {
     initChart();
     initWebSocket();
     renderLoop();
-
-    // Ініціалізуємо крутилки
-    createKnob('knobX', 'valX', 0.01, 10000, 50, (val) => {
-        maxDataPoints = val; // Оновлюємо змінну X
-    });
-
-    createKnob('knobY', 'valY', 0.01, 10000, 150, (val) => {
-        yAxisRange = val;
-        updateYScale(); // Одразу оновлюємо вигляд графіка
-    });
 });
 
 function initChart() {
@@ -99,29 +89,22 @@ function initWebSocket() {
         if (event.data instanceof ArrayBuffer) {
             const points = new Uint8Array(event.data);
 
-            // Тимчасові буфери для нових даних (щоб не чіпати графік 100 разів)
             let newLabels = [];
             let newData = [];
-            let lastValue = 0; // Для виводу на екран
+            let lastValue = 0;
 
-            // Проходимо по кожному числу (ТІЛЬКИ ЛОГІКА)
             points.forEach(function (point) {
                 var dataVal = point;
-                lastValue = dataVal; // Запам'ятовуємо останнє
-
-                // --- Ваша логіка тригера ---
+                lastValue = dataVal;
                 var isRisingEdge = (prevVal < threshold && dataVal >= threshold);
 
                 if (isRisingEdge) {
                     if (st == 0) {
-                        // Початок хвилі
                         st = 1;
                         cu = 0;
                     }
                     else if (st == 1 && cu > 10) {
-                        // maxDataPoints = cu; 
                         st = 2;
-                        // cu = 0;
                     }
                 }
 
@@ -129,14 +112,8 @@ function initWebSocket() {
                     cu++;
                 }
 
-                // 3. Зберігаємо поточне значення як "минуле" для наступного кроку
                 prevVal = dataVal;
 
-
-                // ---------------------------
-
-                // Замість Date() (дуже повільно), краще просто лічильник або порожній рядок, 
-                // якщо час не критичний. Якщо час треба - то так:
                 newLabels.push(""); // Пуста мітка швидша
                 newData.push(dataVal);
             });
@@ -144,13 +121,9 @@ function initWebSocket() {
             // 1. Оновлюємо цифру НА ЕКРАНІ (1 раз за пакет, а не 100)
             document.getElementById('sensorValue').innerHTML = lastValue;
 
-            // 2. Масове додавання даних у графік
-            // Використовуємо spread operator (...) це набагато швидше
             myChart.data.labels.push(...newLabels);
             myChart.data.datasets[0].data.push(...newData);
 
-            // 3. Масове видалення старих даних (ОДИН РАЗ)
-            // Обчислюємо скільки треба видалити
             let totalPoints = myChart.data.labels.length;
             let pointsToRemove = totalPoints - maxDataPoints;
 
@@ -160,8 +133,6 @@ function initWebSocket() {
                 myChart.data.datasets[0].data.splice(0, pointsToRemove);
             }
 
-            // 4. Оновлюємо графік
-            // myChart.update('none');
             needsUpdate = true;
         }
     };
@@ -182,95 +153,14 @@ function updateChart(val) {
 
 }
 
-// --- 3. Універсальна логіка Крутилки (Knob Factory) ---
-function createKnob(elementId, displayId, min, max, startVal, onChangeCallback) {
-    const knob = document.getElementById(elementId);
-    const display = document.getElementById(displayId);
-    let value = startVal;
-    let isDragging = false;
-
-    // Встановлюємо початковий кут
-    updateKnobVisuals();
-
-    // Події миші
-    knob.addEventListener('mousedown', (e) => { isDragging = true; });
-    document.addEventListener('mouseup', () => { isDragging = false; });
-    document.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY));
-
-    // Події тачу (телефон)
-    knob.addEventListener('touchstart', (e) => { isDragging = true; e.preventDefault(); });
-    document.addEventListener('touchend', () => { isDragging = false; });
-    document.addEventListener('touchmove', (e) => {
-        if (!isDragging) return;
-        handleMove(e.touches[0].clientX, e.touches[0].clientY);
-    }, { passive: false });
-
-    function handleMove(clientX, clientY) {
-        if (!isDragging) return;
-
-        const rect = knob.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-
-        // Рахуємо кут
-        const dx = clientX - centerX;
-        const dy = clientY - centerY;
-        let angle = Math.atan2(dy, dx) * 180 / Math.PI + 90;
-        if (angle < 0) angle += 360;
-
-        // Конвертуємо кут (0-360) у значення (min-max)
-        value = Math.round(min + (max - min) * (angle / 360));
-
-        updateKnobVisuals(angle);
-
-        // Викликаємо функцію, яку передали (оновлення графіка або змінної)
-        if (onChangeCallback) onChangeCallback(value);
-    }
-
-    function updateKnobVisuals(angle) {
-        // Якщо кут не передали, рахуємо з поточного value
-        if (angle === undefined) {
-            angle = (value - min) / (max - min) * 360;
-        }
-        knob.style.transform = `rotate(${angle}deg)`;
-        knob.textContent = value;
-        display.textContent = (elementId === 'knobY' ? '+/- ' : '') + value;
-    }
-
-}
-
-// 1. Знаходимо елементи на сторінці
-const inputElement = document.getElementById('InputT');
-const buttonElement = document.getElementById('BtnT');
-
-// 2. Додаємо "слухача" подій на кнопку
-buttonElement.addEventListener('click', function () {
-
-    const Tc = Number(inputElement.value);
-
+document.getElementById('BtnT').addEventListener('click', function () {
+    const Tc = Number(document.getElementById('InputT').value);
     maxDataPoints = 1;
     for (let i = 1; i < Tc; i++) {
         maxDataPoints += cu;
     }
     Tbt = 0;
-
-
 });
-
-
-
-function rebootESP() {
-    if (confirm("Ви точно хочете перезавантажити пристрій?")) {
-        // Перевіряємо, чи підключений сокет (стан OPEN = 1)
-        if (websocket && websocket.readyState === WebSocket.OPEN) {
-            console.log("Sending RESET command...");
-            websocket.send("RESET");
-            setTimeout(() => location.reload(), 3000);
-        } else {
-            alert("Помилка: Немає з'єднання з ESP32!");
-        }
-    }
-}
 
 function sendWifi() {
     const ssid = document.getElementById("ssid").value;
@@ -291,3 +181,40 @@ function sendWifi() {
     }
 
 }
+
+
+// Знаходимо елементи
+const rangeY = document.getElementById('rangeY');
+const rangeX = document.getElementById('rangeX');
+const labelY = document.getElementById('valY');
+const labelX = document.getElementById('valX');
+
+// --- Обробка зміни масштабу Y ---
+rangeY.addEventListener('input', function () {
+    // 1. Оновлюємо змінну
+    yAxisRange = Number(this.value);
+
+    // 2. Оновлюємо підпис
+    labelY.innerText = yAxisRange;
+
+    // 3. Викликаємо вашу функцію оновлення осі
+    updateYScale();
+});
+
+// --- Обробка зміни масштабу X ---
+rangeX.addEventListener('input', function () {
+    // 1. Оновлюємо змінну конфігурації
+    maxDataPoints = Number(this.value);
+
+    // 2. Оновлюємо підпис
+    labelX.innerText = maxDataPoints;
+
+    // 3. (Опціонально) Миттєво обрізаємо графік, щоб не чекати нових даних
+    // Якщо ми зменшили масштаб, зайві точки треба видалити одразу
+    if (myChart.data.labels.length > maxDataPoints) {
+        let pointsToRemove = myChart.data.labels.length - maxDataPoints;
+        myChart.data.labels.splice(0, pointsToRemove);
+        myChart.data.datasets[0].data.splice(0, pointsToRemove);
+        needsUpdate = true; // Кажемо renderLoop перемалювати
+    }
+});

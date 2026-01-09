@@ -17,7 +17,7 @@
         <canvas id="myChart"></canvas>
     </div>
 
-    <div class="controls">
+    <!-- <div class="controls">
         <div class="knob-wrapper">
             <div class="label">Масштаб X (Точки)</div>
             <div class="knob" id="knobX">50</div>
@@ -29,13 +29,30 @@
             <div class="knob y-axis" id="knobY">150</div>
             <div class="value" id="valY">+/- 150</div>
         </div>
-    </div>
+    </div> -->
 
     <br>
 
     <input type="text" id="InputT" placeholder="Введіть число">
+    <button id="BtnT">Масштабувати</button>
+    <br>
+    <br>
 
-    <button id="BtnT">Відправити</button>
+
+    <!-- <div style="margin: 20px; padding: 10px; border: 1px solid #ccc;"> -->
+
+    <label>Масштаб Y (Амплітуда): <span id="valY">150</span></label>
+    <br>
+    <input type="range" id="rangeY" min="10" max="255" value="150" step="10">
+
+    <br><br>
+
+    <label>Масштаб X (Точки): <span id="valX">50</span></label>
+    <br>
+    <input type="range" id="rangeX" min="10" max="10000" value="50" step="1">
+
+    <!-- </div> -->
+
     <br>
     <br>
 
@@ -50,7 +67,6 @@
 
 
 
-    <button onclick="rebootESP()">🔄 Перезавантажити ESP32</button>
 
     <input type="text" id="ssid" placeholder="ssid">
     <input type="text" id="pass" placeholder="pass">
