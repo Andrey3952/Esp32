@@ -1,6 +1,6 @@
-// var gateway = `ws://${window.location.hostname}/ws`;
+var gateway = `ws://${window.location.hostname}/ws`;
 // var gateway = `ws://${window.location.hostname}:8765/ws`;
-var gateway = `ws://192.168.0.176/ws`;
+//var gateway = `ws://192.168.0.176/ws`;
 
 
 var websocket;
@@ -246,4 +246,5 @@ function createKnob(elementId, displayId, min, max, startVal, onChangeCallback) 
         knob.textContent = value;
         display.textContent = (elementId === 'knobY' ? '+/- ' : '') + value;
     }
+
 }
