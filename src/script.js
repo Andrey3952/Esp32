@@ -71,7 +71,7 @@ function initChart() {
 // Функція для динамічної зміни Y без перестворення графіка
 function updateYScale() {
     if (myChart) {
-        myChart.options.scales.y.min = -yAxisRange;
+        myChart.options.scales.y.min = 0;
         myChart.options.scales.y.max = yAxisRange;
         myChart.update('none'); // 'none' для швидкодії (без анімації)
     }
@@ -171,8 +171,8 @@ function sendWifi() {
         return;
     }
 
-    if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({
+    if (websocket.readyState === WebSocket.OPEN) {
+        websocket.send(JSON.stringify({
             line1: ssid,
             line2: pass
         }));
