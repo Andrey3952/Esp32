@@ -22,6 +22,8 @@ const String file_html = "index.html";
 const String file_css = "style.css";
 const String file_js = "script.js";
 
+bool shouldUpdate = false;
+
 // Створюємо об'єкт сервера на порту 80
 AsyncWebServer server(80);
 // Створюємо об'єкт WebSocket на шляху /ws
@@ -47,7 +49,7 @@ const char fallback_html[] PROGMEM = R"rawliteral(
     <input type="text" id="ssid" placeholder="ssid">
     <input type="text" id="pass" placeholder="pass">
 
-  <button onclick="rebootESP()">🔄 Перезавантажити ESP32</button>
+  <button onclick="sendWifi()">🔄 Перезавантажити ESP32</button>
 
  
   <script>
@@ -199,7 +201,7 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType 
             strlcpy(customPass, l2, sizeof(customPass));
 
             // 3. ЗАПУСКАЄМО ПРОЦЕС
-            startUpdateProcess();
+            shouldUpdate = true;
           }
         }
       }
@@ -262,9 +264,14 @@ void loop()
 {
   ws.cleanupClients();
 
-  if (ws.count() > 0)
+  if (shouldUpdate)
   {
-    // 1. Збір даних (займе 100 мс)
+    startUpdateProcess(); // Запускаємо довгий процес
+    shouldUpdate = false; // Скидаємо прапорець, щоб не запустити знову
+  }
+
+  if (!shouldUpdate && ws.count() > 0)
+  {
     for (int i = 0; i < SAMPLES_PER_PACKET; i++)
     {
       digitalWrite(pin_SS, LOW);
@@ -272,10 +279,6 @@ void loop()
       digitalWrite(pin_SS, HIGH);
       delayMicroseconds(SAMPLING_DELAY_MICROS);
     }
-
-    // 2. Відправка
     ws.binaryAll(rawValues, SAMPLES_PER_PACKET);
-
-    // delay(20); // Більше не потрібен, бо цикл і так довгий
   }
 }

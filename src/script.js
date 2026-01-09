@@ -258,6 +258,7 @@ buttonElement.addEventListener('click', function () {
 });
 
 
+
 function rebootESP() {
     if (confirm("Ви точно хочете перезавантажити пристрій?")) {
         // Перевіряємо, чи підключений сокет (стан OPEN = 1)
