@@ -1,0 +1,37 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Графік з ESP32/STM32</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <h2>Дані з сенсора: <span id="sensorValue">0</span></h2>
+
+    <div class="chart-container">
+        <canvas id="myChart"></canvas>
+    </div>
+
+    <div class="controls">
+        <div class="knob-wrapper">
+            <div class="label">Масштаб X (Точки)</div>
+            <div class="knob" id="knobX">50</div>
+            <div class="value" id="valX">50</div>
+        </div>
+
+        <div class="knob-wrapper">
+            <div class="label">Масштаб Y (Амплітуда)</div>
+            <div class="knob y-axis" id="knobY">150</div>
+            <div class="value" id="valY">+/- 150</div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+
+</body>
+
+</html>
