@@ -289,4 +289,5 @@ function sendWifi() {
     } else {
         alert("WebSocket не підключений");
     }
+
 }
