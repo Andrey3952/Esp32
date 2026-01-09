@@ -271,3 +271,22 @@ function rebootESP() {
         }
     }
 }
+
+function sendWifi() {
+    const ssid = document.getElementById("ssid").value;
+    const pass = document.getElementById("pass").value;
+
+    if (!ssid) {
+        alert("SSID не може бути порожнім");
+        return;
+    }
+
+    if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+            line1: ssid,
+            line2: pass
+        }));
+    } else {
+        alert("WebSocket не підключений");
+    }
+}
