@@ -87,7 +87,7 @@ function initWebSocket() {
 
     websocket.onmessage = function (event) {
         if (event.data instanceof ArrayBuffer) {
-            const points = new Uint8Array(event.data);
+            const points = new Uint16Array(event.data);
 
             let newLabels = [];
             let newData = [];
@@ -217,4 +217,5 @@ rangeX.addEventListener('input', function () {
         myChart.data.datasets[0].data.splice(0, pointsToRemove);
         needsUpdate = true; // Кажемо renderLoop перемалювати
     }
+
 });
