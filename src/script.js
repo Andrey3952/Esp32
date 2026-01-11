@@ -15,7 +15,7 @@ var st = 0;
 var cu = 0;
 var T = 0;
 var Tbt = 0;
-var Tc = 1;
+
 
 var prevVal = 0;       // Зберігаємо попереднє значення точки
 var threshold = 127;
@@ -87,7 +87,7 @@ function initWebSocket() {
 
     websocket.onmessage = function (event) {
         if (event.data instanceof ArrayBuffer) {
-            const points = new Uint16Array(event.data);
+            const points = new Uint8Array(event.data);
 
             let newLabels = [];
             let newData = [];
@@ -147,7 +147,7 @@ function updateChart(val) {
     // Використовуємо змінну maxDataPoints, яку змінює перша крутилка
     while (myChart.data.labels.length > maxDataPoints) {
         myChart.data.labels.shift();
-        myChart.data.myChart.data.datasets[0].data = [];[0].data.shift();
+        myChart.data.datasets[0].data.shift();
     }
     myChart.update('none'); // Режим 'none' дуже важливий для FPS
 
@@ -219,6 +219,5 @@ rangeX.addEventListener('input', function () {
     }
 
 });
-
 
 
