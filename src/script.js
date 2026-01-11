@@ -18,7 +18,7 @@ var Tbt = 0;
 
 
 var prevVal = 0;       // Зберігаємо попереднє значення точки
-var threshold = 127;
+var threshold = 2048;
 
 let num = Math.floor(Math.random() * 256);
 
@@ -219,6 +219,5 @@ rangeX.addEventListener('input', function () {
     }
 
 });
-
 
 
