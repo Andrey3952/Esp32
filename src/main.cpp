@@ -1,293 +1,223 @@
-#include <Arduino.h>
-#include <SPI.h>
-#include <WiFi.h>
-#include <AsyncTCP.h>
-#include <ESPAsyncWebServer.h>
-#include <LittleFS.h>
-#include <HTTPClient.h>
-#include <ArduinoJson.h>
+var gateway = `ws://${window.location.hostname}/ws`;
+// var gateway = `ws://${window.location.hostname}:8765/ws`;
+// var gateway = `ws://192.168.0.176/ws`;
 
-const int pin_SCLK = 18;
-const int pin_MISO = 4;
-const int pin_MOSI = 23;
-const int pin_SS = 5;
-char customSSID[32] = "";
-char customPass[32] = "";
-const char *ssidAR = "ESP32_AP";
-const char *passwordAR = "12345678";
-// https://raw.githubusercontent.com/Andrey3952/Esp32/main/src/
 
-const String gh_base = "https://raw.githubusercontent.com/Andrey3952/Esp32/main/src/";
-const String file_html = "index.html";
-const String file_css = "style.css";
-const String file_js = "script.js";
-const String chart_js = "chart.js";
+// var websocket;
+var myChart;
+var needsUpdate = false; // Прапорець
 
-bool shouldUpdate = false;
+// Змінні конфігурації
+var maxDataPoints = 50; // Це наш t (вісь X)
+var yAxisRange = 150;   // Це межа Y (від -150 до +150)
 
-// Створюємо об'єкт сервера на порту 80
-AsyncWebServer server(80);
-// Створюємо об'єкт WebSocket на шляху /ws
-AsyncWebSocket ws("/ws");
+var st = 0;
+var cu = 0;
+var T = 0;
+var Tbt = 0;
 
-const char fallback_html[] PROGMEM = R"rawliteral(
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset='utf-8'>
-  <title>ESP Offline</title>
-  <style>
-    body { font-family: sans-serif; text-align: center; padding: 50px; }
-    h1 { color: #e74c3c; }
-  </style>
-</head>
-<body>
-  <h1>Увага: Немає зв'язку з GitHub</h1>
-  <p>Не вдалося завантажити оновлення.</p>
-  <p>Це резервна сторінка з пам'яті ESP32.</p>
-  <p>Привіт з ESP32!</p>
 
-    <input type="text" id="ssid" placeholder="ssid">
-    <input type="text" id="pass" placeholder="pass">
+var prevVal = 0;       // Зберігаємо попереднє значення точки
+var threshold = 2048;
 
-  <button onclick="sendWifi()">🔄 Перезавантажити ESP32</button>
+let num = Math.floor(Math.random() * 256);
 
-  <div id="status">Очікування...</div>
+function renderLoop() {
 
- 
-  <script>
-const ws = new WebSocket("ws://192.168.4.1/ws");
+    if (needsUpdate && myChart) {
+        myChart.update('none'); // Малюємо тільки якщо є нові дані
+        needsUpdate = false;    // Скидаємо прапорець
+    }
+    requestAnimationFrame(renderLoop); // Плануємо наступний кадр
+}
 
-ws.onmessage = function(event) {
-       // Цей код оновлює текст на екрані, коли ESP надсилає статус
-       document.getElementById("status").innerText = event.data;
+// --- 1. Ініціалізація графіка ---
+window.addEventListener('load', function () {
+    initChart();
+    initWebSocket();
+    renderLoop();
+});
+
+function initChart() {
+    const ctx = document.getElementById('myChart').getContext('2d');
+    myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Signal',
+                data: [],
+                borderColor: 'rgb(75, 192, 192)',
+                borderWidth: 2,
+                pointRadius: 0,
+                tension: 0, // Трохи згладимо лінію
+                stepped: true,
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            interaction: { intersect: false },
+            scales: {
+                x: { display: true },
+                y: { display: true }
+            }
+        }
+    });
+}
+
+// Функція для динамічної зміни Y без перестворення графіка
+function updateYScale() {
+    if (myChart) {
+        myChart.options.scales.y.min = 0;
+        myChart.options.scales.y.max = yAxisRange;
+        myChart.update('none'); // 'none' для швидкодії (без анімації)
+    }
+}
+
+// --- 2. WebSocket ---
+function initWebSocket() {
+    console.log('Connecting to WebSocket...');
+    websocket = new WebSocket(gateway);
+    websocket.binaryType = "arraybuffer";
+    websocket.onopen = () => console.log('Connection opened');
+    websocket.onclose = () => setTimeout(initWebSocket, 2000);
+
+    websocket.onmessage = function (event) {
+        if (event.data instanceof ArrayBuffer) {
+            const points = new Uint16Array(event.data);
+
+            let newLabels = [];
+            let newData = [];
+            let lastValue = 0;
+
+            points.forEach(function (point) {
+                var dataVal = point;
+                lastValue = dataVal;
+                var isRisingEdge = (prevVal < threshold && dataVal >= threshold);
+
+                if (isRisingEdge) {
+                    if (st == 0) {
+                        st = 1;
+                        cu = 0;
+                    }
+                    else if (st == 1 && cu > 10) {
+                        st = 2;
+                    }
+                }
+
+                if (st == 1) {
+                    cu++;
+                }
+
+                prevVal = dataVal;
+
+                newLabels.push(""); // Пуста мітка швидша
+                newData.push(dataVal);
+            });
+
+            // 1. Оновлюємо цифру НА ЕКРАНІ (1 раз за пакет, а не 100)
+            document.getElementById('sensorValue').innerHTML = lastValue;
+
+            myChart.data.labels.push(...newLabels);
+            myChart.data.datasets[0].data.push(...newData);
+
+            let totalPoints = myChart.data.labels.length;
+            let pointsToRemove = totalPoints - maxDataPoints;
+
+            if (pointsToRemove > 0) {
+                // splice видаляє пачку даних миттєво
+                myChart.data.labels.splice(0, pointsToRemove);
+                myChart.data.datasets[0].data.splice(0, pointsToRemove);
+            }
+
+            needsUpdate = true;
+        }
     };
+}
+function updateChart(val) {
+    const now = new Date();
+    const timeLabel = now.getSeconds() + ":" + now.getMilliseconds();
+
+    myChart.data.labels.push(timeLabel);
+    myChart.data.datasets[0].data.push(val);
+
+    // Використовуємо змінну maxDataPoints, яку змінює перша крутилка
+    while (myChart.data.labels.length > maxDataPoints) {
+        myChart.data.labels.shift();
+        myChart.data.datasets[0].data.shift();
+    }
+    myChart.update('none'); // Режим 'none' дуже важливий для FPS
+
+}
+
+document.getElementById('BtnT').addEventListener('click', function () {
+    const Tc = Number(document.getElementById('InputT').value);
+    maxDataPoints = 1;
+    for (let i = 1; i < Tc; i++) {
+        maxDataPoints += cu;
+    }
+    Tbt = 0;
+});
 
 function sendWifi() {
-  const ssid = document.getElementById("ssid").value;
-  const pass = document.getElementById("pass").value;
+    const ssid = document.getElementById("ssid").value;
+    const pass = document.getElementById("pass").value;
 
-  if (!ssid) {
-    alert("SSID не може бути порожнім");
-    return;
-  }
-
-  if (ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({
-      line1: ssid,
-      line2: pass
-    }));
-  } else {
-    alert("WebSocket не підключений");
-  }
-}
-</script>
-
- 
-</body>
-</html>
-)rawliteral";
-
-bool downloadFile(String filename)
-{
-  String url = gh_base + filename;
-  Serial.println("Downloading: " + url);
-
-  HTTPClient http;
-  WiFiClientSecure client;
-  client.setInsecure(); // Ігноруємо SSL сертифікати (найпростіший спосіб для GitHub)
-
-  if (http.begin(client, url))
-  {
-    int httpCode = http.GET();
-    if (httpCode == HTTP_CODE_OK)
-    {
-      // Відкриваємо файл для запису
-      File file = LittleFS.open("/" + filename, "w");
-      if (file)
-      {
-        // Записуємо потік даних з інтернету прямо в файл
-        http.writeToStream(&file);
-        file.close();
-        Serial.println("File saved: " + filename);
-        http.end();
-        return true;
-      }
+    if (!ssid) {
+        alert("SSID не може бути порожнім");
+        return;
     }
-    else
-    {
-      Serial.printf("HTTP Error: %d\n", httpCode);
+
+    if (websocket.readyState === WebSocket.OPEN) {
+        websocket.send(JSON.stringify({
+            line1: ssid,
+            line2: pass
+        }));
+    } else {
+        alert("WebSocket не підключений");
     }
-    http.end();
-  }
-  Serial.println("Download failed!");
-  return false;
+
 }
 
-void startUpdateProcess()
-{
-  // Перемикаємо в режим AP+STA, щоб не розірвати зв'язок з телефоном/компом
-  WiFi.mode(WIFI_AP_STA);
-  WiFi.begin(customSSID, customPass);
 
-  ws.textAll("Підключення до " + String(customSSID) + "...");
+// Знаходимо елементи
+const rangeY = document.getElementById('rangeY');
+const rangeX = document.getElementById('rangeX');
+const labelY = document.getElementById('valY');
+const labelX = document.getElementById('valX');
 
-  int i = 0;
-  while (WiFi.status() != WL_CONNECTED && i < 20)
-  {
-    delay(500);
-    i++;
-  }
+// --- Обробка зміни масштабу Y ---
+rangeY.addEventListener('input', function () {
+    // 1. Оновлюємо змінну
+    yAxisRange = Number(this.value);
 
-  if (WiFi.status() == WL_CONNECTED)
-  {
-    ws.textAll("WiFi OK! Качаємо файли...");
+    // 2. Оновлюємо підпис
+    labelY.innerText = yAxisRange;
 
-    bool ok1 = downloadFile(file_html);
-    bool ok2 = downloadFile(file_css);
-    bool ok3 = downloadFile(file_js);
-    bool ok4 = downloadFile(chart_js);
+    // 3. Викликаємо вашу функцію оновлення осі
+    updateYScale();
+});
 
-    if (ok1 && ok2 && ok3 && ok4)
-    {
-      ws.textAll("Успіх! Перезавантаження...");
-      delay(2000);
-      ESP.restart();
+// --- Обробка зміни масштабу X ---
+rangeX.addEventListener('input', function () {
+    // 1. Оновлюємо змінну конфігурації
+    maxDataPoints = Number(this.value);
+
+    // 2. Оновлюємо підпис
+    labelX.innerText = maxDataPoints;
+
+    // 3. (Опціонально) Миттєво обрізаємо графік, щоб не чекати нових даних
+    // Якщо ми зменшили масштаб, зайві точки треба видалити одразу
+    if (myChart.data.labels.length > maxDataPoints) {
+        let pointsToRemove = myChart.data.labels.length - maxDataPoints;
+        myChart.data.labels.splice(0, pointsToRemove);
+        myChart.data.datasets[0].data.splice(0, pointsToRemove);
+        needsUpdate = true; // Кажемо renderLoop перемалювати
     }
-    else
-    {
-      ws.textAll("Помилка скачування!");
-    }
-  }
-  else
-  {
-    ws.textAll("Не вдалося підключитись до WiFi!");
-  }
-}
 
-// --- Функція обробки подій WebSocket ---
-void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type,
-             void *arg, uint8_t *data, size_t len)
-{
-  switch (type)
-  {
-  case WS_EVT_CONNECT:
-    Serial.printf("WebSocket client #%u connected\n", client->id());
-    break;
+});
 
-  case WS_EVT_DISCONNECT:
-    Serial.printf("WebSocket client #%u disconnected\n", client->id());
-    break;
 
-  case WS_EVT_DATA:
-    AwsFrameInfo *info = (AwsFrameInfo *)arg;
-    if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT)
-    {
-      data[len] = 0;
-      String message = (char *)data;
-
-      if (message == "RESET")
-      {
-        Serial.println("Reboot command received!");
-        ESP.restart();
-      }
-      else
-      {
-        // --- ТУТ БУЛА ПОМИЛКА ---
-        StaticJsonDocument<200> doc;
-        // 1. Парсимо JSON
-        DeserializationError error = deserializeJson(doc, message);
-
-        if (!error)
-        {
-          // 2. Зчитуємо дані
-          const char *l1 = doc["line1"];
-          const char *l2 = doc["line2"];
-
-          if (l1 && l2)
-          {
-            strlcpy(customSSID, l1, sizeof(customSSID));
-            strlcpy(customPass, l2, sizeof(customPass));
-
-            // 3. ЗАПУСКАЄМО ПРОЦЕС
-            shouldUpdate = true;
-          }
-        }
-      }
-    }
-    break;
-  }
-}
-
-void setup()
-{
-  Serial.begin(115200);
-
-  // 1. Монтуємо файлову систему
-  if (!LittleFS.begin(true))
-  {
-    Serial.println("Mount Failed");
-    return;
-  }
-
-  // 2. Налаштування SPI
-  pinMode(pin_SS, OUTPUT);
-  digitalWrite(pin_SS, HIGH);
-  SPI.begin(pin_SCLK, pin_MISO, pin_MOSI, pin_SS);
-  SPI.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE0));
-
-  // 3. Запускаємо власну точку доступу (щоб можна було зайти)
-  WiFi.mode(WIFI_AP);
-  WiFi.softAP(ssidAR, passwordAR);
-  Serial.print("AP IP: ");
-  Serial.println(WiFi.softAPIP());
-
-  // 4. Перевіряємо, чи є файли сайту
-  bool filesExist = LittleFS.exists("/index.html") && LittleFS.exists("/style.css") && LittleFS.exists("/script.js");
-
-  ws.onEvent(onEvent);
-  server.addHandler(&ws);
-
-  // 5. Вирішуємо, що показувати
-  if (filesExist)
-  {
-    Serial.println("Starting Normal Mode");
-    server.serveStatic("/", LittleFS, "/").setDefaultFile("index.html");
-  }
-  else
-  {
-    Serial.println("Starting Update Mode");
-    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
-              { request->send(200, "text/html", fallback_html); });
-  }
-
-  server.begin();
-}
-
-#define SAMPLES_PER_PACKET 200
-#define SAMPLING_DELAY_MICROS 500
-
-uint8_t rawValues[SAMPLES_PER_PACKET];
-
-void loop()
-{
-  ws.cleanupClients();
-
-  if (shouldUpdate)
-  {
-    startUpdateProcess(); // Запускаємо довгий процес
-    shouldUpdate = false; // Скидаємо прапорець, щоб не запустити знову
-  }
-
-  if (!shouldUpdate && ws.count() > 0)
-  {
-    for (int i = 0; i < SAMPLES_PER_PACKET; i++)
-    {
-      digitalWrite(pin_SS, LOW);
-      rawValues[i] = SPI.transfer(0x00);
-      digitalWrite(pin_SS, HIGH);
-      delayMicroseconds(SAMPLING_DELAY_MICROS);
-    }
-    ws.binaryAll(rawValues, SAMPLES_PER_PACKET);
-  }
-}
