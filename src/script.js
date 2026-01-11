@@ -87,7 +87,7 @@ function initWebSocket() {
 
     websocket.onmessage = function (event) {
         if (event.data instanceof ArrayBuffer) {
-            const points = new Uint16Array(event.data);
+            const points = new Uint8Array(event.data);
 
             let newLabels = [];
             let newData = [];
@@ -219,4 +219,5 @@ rangeX.addEventListener('input', function () {
     }
 
 });
+
 
