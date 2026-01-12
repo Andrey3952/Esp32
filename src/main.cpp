@@ -267,7 +267,7 @@ void setup()
 #define SAMPLES_PER_PACKET 200
 #define SAMPLING_DELAY_MICROS 500
 
-uint8_t rawValues[SAMPLES_PER_PACKET];
+uint16_t rawValues[SAMPLES_PER_PACKET];
 
 void loop()
 {
@@ -284,10 +284,13 @@ void loop()
     for (int i = 0; i < SAMPLES_PER_PACKET; i++)
     {
       digitalWrite(pin_SS, LOW);
-      rawValues[i] = SPI.transfer(0x00);
+      uint16_t rawResult = SPI.transfer16(0x0000);
       digitalWrite(pin_SS, HIGH);
+      rawValues[i] = rawResult & 0x0FFF;
+      Serial.println(rawValues[i]);
       delayMicroseconds(SAMPLING_DELAY_MICROS);
     }
-    ws.binaryAll(rawValues, SAMPLES_PER_PACKET);
+    SPI.endTransaction();
+    ws.binaryAll((uint8_t *)rawValues, SAMPLES_PER_PACKET * 2);
   }
 }
