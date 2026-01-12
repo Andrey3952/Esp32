@@ -166,6 +166,14 @@ document.getElementById('BtnT').addEventListener('click', function () {
     }
     Tbt = 0;
 });
+document.getElementById('BTStop').addEventListener('click', function () {
+    if (stop == 0) {
+        stop = 1;
+    }
+    else {
+        stop = 0;
+    }
+});
 
 function sendWifi() {
     const ssid = document.getElementById("ssid").value;
