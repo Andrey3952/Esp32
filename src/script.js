@@ -140,6 +140,9 @@ function initWebSocket() {
                 needsUpdate = true;
             }
         }
+        else {
+            document.getElementById("sensorValue").innerText = event.data;
+        }
     };
 }
 function updateChart(val) {
