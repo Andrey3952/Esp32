@@ -71,7 +71,7 @@ function initChart() {
 // Функція для динамічної зміни Y без перестворення графіка
 function updateYScale() {
     if (myChart) {
-        myChart.options.scales.y.min = 0;
+        myChart.options.scales.y.min = -yAxisRange;
         myChart.options.scales.y.max = yAxisRange;
         myChart.update('none'); // 'none' для швидкодії (без анімації)
     }
