@@ -20,7 +20,7 @@ var stop = 0;
 
 
 var prevVal = 0;       // Зберігаємо попереднє значення точки
-var threshold = 2048;
+var threshold = 0;
 
 let num = Math.floor(Math.random() * 256);
 
@@ -159,7 +159,7 @@ function updateChart(val) {
 }
 
 document.getElementById('BtnT').addEventListener('click', function () {
-    const Tc = Number(document.getElementById('InputT').value);
+    const Tc = (Number(document.getElementById('InputT').value)) + 1;
     maxDataPoints = 1;
     for (let i = 1; i < Tc; i++) {
         maxDataPoints += cu;
