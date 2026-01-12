@@ -197,7 +197,10 @@ rangeY.addEventListener('input', function () {
     yAxisRange = Number(this.value);
 
     // 2. Оновлюємо підпис
-    labelY.innerText = yAxisRange;
+    labelY.innerText = -yAxisRange;
+
+    // myChart.options.scales.y.min = -yAxisRange;
+    //     myChart.options.scales.y.max = yAxisRange;
 
     // 3. Викликаємо вашу функцію оновлення осі
     updateYScale();
