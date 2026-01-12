@@ -219,12 +219,13 @@ rangeX.addEventListener('input', function () {
 
     // 3. (Опціонально) Миттєво обрізаємо графік, щоб не чекати нових даних
     // Якщо ми зменшили масштаб, зайві точки треба видалити одразу
-    if (myChart.data.labels.length > maxDataPoints) {
-        let pointsToRemove = myChart.data.labels.length - maxDataPoints;
-        myChart.data.labels.splice(0, pointsToRemove);
-        myChart.data.datasets[0].data.splice(0, pointsToRemove);
-        needsUpdate = true; // Кажемо renderLoop перемалювати
+    if (stop == 0) {
+        if (myChart.data.labels.length > maxDataPoints) {
+            let pointsToRemove = myChart.data.labels.length - maxDataPoints;
+            myChart.data.labels.splice(0, pointsToRemove);
+            myChart.data.datasets[0].data.splice(0, pointsToRemove);
+            needsUpdate = true; // Кажемо renderLoop перемалювати
+        }
     }
-
 });
 
