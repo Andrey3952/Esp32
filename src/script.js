@@ -121,22 +121,22 @@ function initWebSocket() {
                 newLabels.push(""); // Пуста мітка швидша
                 newData.push(dataVal);
             });
-
-            // 1. Оновлюємо цифру НА ЕКРАНІ (1 раз за пакет, а не 100)
-            document.getElementById('sensorValue').innerHTML = lastValue;
-
-            myChart.data.labels.push(...newLabels);
-            myChart.data.datasets[0].data.push(...newData);
-
-            let totalPoints = myChart.data.labels.length;
-            let pointsToRemove = totalPoints - maxDataPoints;
-
-            if (pointsToRemove > 0) {
-                // splice видаляє пачку даних миттєво
-                myChart.data.labels.splice(0, pointsToRemove);
-                myChart.data.datasets[0].data.splice(0, pointsToRemove);
-            }
             if (stop == 0) {
+                // 1. Оновлюємо цифру НА ЕКРАНІ (1 раз за пакет, а не 100)
+                document.getElementById('sensorValue').innerHTML = lastValue;
+
+                myChart.data.labels.push(...newLabels);
+                myChart.data.datasets[0].data.push(...newData);
+
+                let totalPoints = myChart.data.labels.length;
+                let pointsToRemove = totalPoints - maxDataPoints;
+
+                if (pointsToRemove > 0) {
+                    // splice видаляє пачку даних миттєво
+                    myChart.data.labels.splice(0, pointsToRemove);
+                    myChart.data.datasets[0].data.splice(0, pointsToRemove);
+                }
+
                 needsUpdate = true;
             }
         }
