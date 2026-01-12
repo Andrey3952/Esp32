@@ -200,6 +200,25 @@ function sendWifi() {
 
 }
 
+function conWifi() {
+    const ssid = document.getElementById("ssid").value;
+    const pass = document.getElementById("pass").value;
+
+    if (!ssid) {
+        alert("SSID не може бути порожнім");
+        return;
+    }
+
+    if (websocket.readyState === WebSocket.OPEN) {
+        websocket.send(JSON.stringify({
+            conSSID: ssid,
+            conPASS: pass
+        }));
+    } else {
+        alert("WebSocket не підключений");
+    }
+}
+
 
 // Знаходимо елементи
 const rangeY = document.getElementById('rangeY');

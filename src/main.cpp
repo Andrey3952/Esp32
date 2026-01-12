@@ -24,6 +24,7 @@ const String file_js = "script.js";
 const String chart_js = "chart.js";
 
 bool shouldUpdate = false;
+bool shouldCon = false;
 
 // Створюємо об'єкт сервера на порту 80
 AsyncWebServer server(80);
@@ -165,6 +166,31 @@ void startUpdateProcess()
   }
 }
 
+void startCon()
+{
+  // Перемикаємо в режим AP+STA, щоб не розірвати зв'язок з телефоном/компом
+  WiFi.mode(WIFI_AP_STA);
+  WiFi.begin(customSSID, customPass);
+
+  ws.textAll("Підключення до " + String(customSSID) + "...");
+
+  int i = 0;
+  while (WiFi.status() != WL_CONNECTED && i < 20)
+  {
+    delay(500);
+    i++;
+  }
+
+  if (WiFi.status() == WL_CONNECTED)
+  {
+    ws.textAll("WiFi OK!");
+  }
+  else
+  {
+    ws.textAll("Не вдалося підключитись до WiFi!");
+  }
+}
+
 // --- Функція обробки подій WebSocket ---
 void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type,
              void *arg, uint8_t *data, size_t len)
@@ -204,6 +230,9 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType 
           const char *l1 = doc["line1"];
           const char *l2 = doc["line2"];
 
+          const char *conSSID = doc["conSSID"];
+          const char *conPASS = doc["conPASS"];
+
           if (l1 && l2)
           {
             strlcpy(customSSID, l1, sizeof(customSSID));
@@ -211,6 +240,12 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType 
 
             // 3. ЗАПУСКАЄМО ПРОЦЕС
             shouldUpdate = true;
+          }
+          if (conSSID && conPASS)
+          {
+            strlcpy(customSSID, conSSID, sizeof(customSSID));
+            strlcpy(customPass, conPASS, sizeof(customPass));
+            shouldCon = true;
           }
         }
       }
@@ -278,8 +313,13 @@ void loop()
     startUpdateProcess(); // Запускаємо довгий процес
     shouldUpdate = false; // Скидаємо прапорець, щоб не запустити знову
   }
+  if (shouldCon)
+  {
+    startCon();
+    shouldCon = false;
+  }
 
-  if (!shouldUpdate && ws.count() > 0)
+  if (!shouldCon && !shouldUpdate && ws.count() > 0)
   {
     for (int i = 0; i < SAMPLES_PER_PACKET; i++)
     {
