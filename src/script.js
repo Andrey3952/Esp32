@@ -9,7 +9,7 @@ var needsUpdate = false; // Прапорець
 
 // Змінні конфігурації
 var maxDataPoints = 50; // Це наш t (вісь X)
-var yAxisRange = 150;   // Це межа Y (від -150 до +150)
+var yAxisRange = 5;   // Це межа Y (від -150 до +150)
 
 var st = 0;
 var cu = 0;
