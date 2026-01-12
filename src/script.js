@@ -16,6 +16,8 @@ var cu = 0;
 var T = 0;
 var Tbt = 0;
 
+var stop = 0;
+
 
 var prevVal = 0;       // Зберігаємо попереднє значення точки
 var threshold = 2048;
@@ -134,8 +136,9 @@ function initWebSocket() {
                 myChart.data.labels.splice(0, pointsToRemove);
                 myChart.data.datasets[0].data.splice(0, pointsToRemove);
             }
-
-            needsUpdate = true;
+            if (stop == 0) {
+                needsUpdate = true;
+            }
         }
     };
 }
