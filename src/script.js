@@ -172,11 +172,11 @@ document.getElementById('BtnT').addEventListener('click', function () {
 document.getElementById('BTStop').addEventListener('click', function () {
     if (stop == 0) {
         stop = 1;
-        btn.textContent = "Продовжити";
+        document.getElementById('BTStop').textContent = "Продовжити";
     }
     else {
         stop = 0;
-        btn.textContent = "Зупинити";
+        document.getElementById('BTStop').textContent = "Зупинити";
     }
 });
 
