@@ -96,7 +96,8 @@ function initWebSocket() {
             let lastValue = 0;
 
             points.forEach(function (point) {
-                var dataVal = ((point * 10) / 4095) - 5;
+                // var dataVal = ((point * 10) / 4095) - 5;
+                var dataVal = point;
 
 
                 lastValue = dataVal;
@@ -260,4 +261,5 @@ rangeX.addEventListener('input', function () {
         }
     }
 });
+
 
