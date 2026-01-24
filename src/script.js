@@ -1,6 +1,6 @@
-// var gateway = `ws://${window.location.hostname}/ws`;
+var gateway = `ws://${window.location.hostname}/ws`;
 // var gateway = `ws://${window.location.hostname}:8765/ws`;
-var gateway = `ws://192.168.0.176/ws`;
+// var gateway = `ws://192.168.0.176/ws`;
 
 
 // var websocket;
@@ -147,6 +147,15 @@ function initWebSocket() {
             // if (event.data == "WiFi OK!") {
             //     document.getElementById("setmenu").style.display = "none";
             // }
+
+            if (event.data == "Успіх! Перезавантаження...") {
+                // document.getElementById("setmenu").style.display = "none";
+                location.reload();
+            }
+
+
+
+
         }
     };
 }
