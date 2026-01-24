@@ -298,7 +298,6 @@ void setup()
 
   server.begin();
 }
-
 #define SAMPLES_PER_PACKET 200
 #define SAMPLING_DELAY_MICROS 500
 

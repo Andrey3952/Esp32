@@ -17,7 +17,7 @@ var T = 0;
 var Tbt = 0;
 
 var stop = 0;
-
+var root = 0;
 
 var prevVal = 0;       // Зберігаємо попереднє значення точки
 var threshold = 0;
@@ -207,10 +207,12 @@ document.getElementsByClassName("chart-container")[0].addEventListener('click', 
     }
 });
 
-document.getElementsByClassName("chart-container")[0].addEventListener('dblclick', function () {
-    document.getElementById("setmenu").style.display = "flex";
+if (root == 1) {
+    document.getElementsByClassName("chart-container")[0].addEventListener('dblclick', function () {
+        document.getElementById("setmenu").style.display = "flex";
 
-});
+    });
+}
 
 function sendWifi() {
     const ssid = document.getElementById("ssid").value;
