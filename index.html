@@ -1,0 +1,90 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Графік з ESP32/STM32</title>
+    <script src="chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <span id="settings"><img id="setimg" src="settings.png" alt="Зима" /></span>
+
+    <!-- <h2>Дані з сенсора: </h2> -->
+
+    <!-- <span >settings</span> -->
+    <div class="chart-container">
+        <canvas id="myChart"></canvas>
+    </div>
+
+
+
+    <!-- <button id="BTStop">Зупинити</button> -->
+
+    <br>
+    <br>
+
+    <br>
+
+
+    <input type="text" id="InputT" placeholder="Введіть число">
+    <button id="BtnT">Масштабувати</button>
+    <br>
+    <br>
+
+
+    <!-- <div style="margin: 20px; padding: 10px; border: 1px solid #ccc;"> -->
+
+    <label>Масштаб Y (Амплітуда): <span id="valY">150</span></label>
+    <br>
+    <input type="range" id="rangeY" min="0.1" max="6" value="150" step="0.1">
+
+    <br><br>
+
+    <label>Масштаб X (Точки): <span id="valX">50</span></label>
+    <br>
+    <input type="range" id="rangeX" min="10" max="100000" value="50" step="1">
+    <br><br><br><br><br><br><br>
+
+
+
+
+    <div id="setmenu">
+        <div id="setmenu-content">
+            <div>
+                <span id=" settH"><img id="setH" src="H.png" alt="Зима" /></span>
+            </div>
+            <div>
+                <div>
+                    <input type="text" id="ssid" placeholder="ssid">
+                </div>
+                <div>
+                    <input type="text" id="pass" placeholder="pass">
+                </div>
+            </div>
+            <div>
+                <div>
+                    <button onclick="sendWifi()" id="send">🔄 Оновити ESP32</button>
+                </div>
+                <div>
+                    <button onclick="conWifi()" id="con">Підключитись до WiFi</button>
+                </div>
+            </div>
+        </div>
+        <div id="sen" style="display: none;">
+            <span id="sensorValue"></span>
+        </div>
+    </div>
+
+
+
+
+    <script src="script.js"></script>
+
+</body>
+
+
+</html>

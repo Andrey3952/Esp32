@@ -1,0 +1,118 @@
+body {
+    font-family: sans-serif;
+    text-align: center;
+    padding: 20px;
+    background-color: #f4f4f4;
+
+    background-color: #F794C1;
+
+
+
+}
+
+.chart-container {
+    width: 95%;
+    height: 60vh;
+    margin: 0 auto;
+    background: white;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+
+
+#settings {
+    display: block;
+    /* Робимо елемент блочним, щоб працювала ширина */
+    width: 95%;
+    /* Така ж ширина, як у .chart-container */
+    margin: 0 auto;
+    /* Центруємо сам блок по горизонталі */
+    text-align: left;
+    /* Притискаємо текст всередині вліво */
+    margin-bottom: 5px;
+
+
+    height: auto;
+}
+
+#setimg {
+    max-width: 2%;
+    height: 2%;
+    /* animation: spin 2s linear infinite; */
+}
+
+#setimg:hover {
+    animation: spin 2s linear infinite;
+}
+
+#setmenu {
+    position: fixed;
+    /* Фіксує елемент відносно вікна браузера (не сторінки) */
+    top: 0;
+    left: 0;
+    width: 100%;
+    /* Ширина на все вікно */
+    height: 100%;
+    /* Висота на все вікно */
+    background-color: rgba(0, 0, 0, 1);
+    /* Чорний колір з прозорістю 80% */
+    z-index: 9998;
+    /* Гарантує, що блок буде поверх інших елементів */
+
+    /* Додатково: якщо хочете центрувати вміст всередині цього блоку */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    background-color: rgba(247, 148, 193, 0.5);
+
+    /* 2. Додаємо магію розмиття */
+    /* Чим більше пікселів (px), тим сильніше розмиття */
+    backdrop-filter: blur(10px);
+    /* 3. Для підтримки Safari (iPhone/Mac) обов'язково додайте цей префікс: */
+    -webkit-backdrop-filter: blur(4px);
+    display: none;
+
+}
+
+#ssid {
+    margin-bottom: 10px;
+}
+
+#pass {
+    margin-bottom: 10px;
+}
+
+#con {
+    margin-bottom: 10px;
+}
+
+#send {
+    margin-bottom: 10px;
+}
+
+#setH {
+    max-width: 2%;
+    height: 2%;
+}
+
+#setH:hover {
+    /* max-width: 3%;
+    height: 3%; */
+    animation: spin 2s linear infinite;
+
+}
+
+
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
