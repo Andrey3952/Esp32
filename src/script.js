@@ -146,6 +146,8 @@ function initWebSocket() {
             document.getElementById("sensorValue").innerText = event.data;
             if (event.data == "WiFi OK!") {
                 document.getElementById("setmenu").style.display = "none";
+                document.getElementById("sen").style.display = "none";
+
             }
 
             if (event.data == "Успіх! Перезавантаження...") {
