@@ -147,6 +147,8 @@ function initWebSocket() {
             if (event.data == "WiFi OK!") {
                 document.getElementById("setmenu").style.display = "none";
                 document.getElementById("sen").style.display = "none";
+                location.reload();
+
 
             }
 
