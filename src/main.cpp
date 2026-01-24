@@ -335,4 +335,3 @@ void loop()
     ws.binaryAll((uint8_t *)rawValues, SAMPLES_PER_PACKET * 2);
   }
 }
-

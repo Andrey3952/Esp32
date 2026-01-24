@@ -1,6 +1,6 @@
-var gateway = `ws://${window.location.hostname}/ws`;
+// var gateway = `ws://${window.location.hostname}/ws`;
 // var gateway = `ws://${window.location.hostname}:8765/ws`;
-// var gateway = `ws://192.168.0.176/ws`;
+var gateway = `ws://192.168.0.176/ws`;
 
 
 // var websocket;
@@ -49,7 +49,8 @@ function initChart() {
             datasets: [{
                 label: 'Signal',
                 data: [],
-                borderColor: 'rgb(75, 192, 192)',
+                // borderColor: 'rgb(75, 192, 192)',
+                borderColor: 'rgb(245, 110, 174)',
                 borderWidth: 2,
                 pointRadius: 0,
                 tension: 0, // Трохи згладимо лінію
@@ -143,6 +144,9 @@ function initWebSocket() {
         }
         else {
             document.getElementById("sensorValue").innerText = event.data;
+            // if (event.data == "WiFi OK!") {
+            //     document.getElementById("setmenu").style.display = "none";
+            // }
         }
     };
 }
@@ -170,7 +174,20 @@ document.getElementById('BtnT').addEventListener('click', function () {
     }
     Tbt = 0;
 });
-document.getElementById('BTStop').addEventListener('click', function () {
+
+
+
+document.getElementById('settings').addEventListener('click', function () {
+    document.getElementById("setmenu").style.display = "flex";
+    // document.getElementById("v").style.display = "flex";
+
+});
+
+document.getElementById('setH').addEventListener('click', function () {
+    document.getElementById("setmenu").style.display = "none";
+});
+
+document.getElementsByClassName("chart-container")[0].addEventListener('click', function () {
     if (stop == 0) {
         stop = 1;
         document.getElementById('BTStop').textContent = "Продовжити";
@@ -202,6 +219,7 @@ function sendWifi() {
 }
 
 function conWifi() {
+
     const ssid = document.getElementById("ssid").value;
     const pass = document.getElementById("pass").value;
 
@@ -211,6 +229,8 @@ function conWifi() {
     }
 
     if (websocket.readyState === WebSocket.OPEN) {
+        document.getElementById("setmenu-content").style.display = "none";
+        document.getElementById("sen").style.display = "flex";
         websocket.send(JSON.stringify({
             conSSID: ssid,
             conPASS: pass
@@ -261,5 +281,4 @@ rangeX.addEventListener('input', function () {
         }
     }
 });
-
 

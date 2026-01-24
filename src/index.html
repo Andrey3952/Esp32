@@ -11,29 +11,18 @@
 
 <body>
 
-    <h2>Дані з сенсора: <span id="sensorValue">0</span></h2>
+    <span id="settings"><img id="setimg" src="settings.png" alt="Зима" /></span>
 
+    <!-- <h2>Дані з сенсора: </h2> -->
+
+    <!-- <span >settings</span> -->
     <div class="chart-container">
         <canvas id="myChart"></canvas>
     </div>
 
-    <!-- <div class="controls">
-        <div class="knob-wrapper">
-            <div class="label">Масштаб X (Точки)</div>
-            <div class="knob" id="knobX">50</div>
-            <div class="value" id="valX">50</div>
-        </div>
 
-        <div class="knob-wrapper">
-            <div class="label">Масштаб Y (Амплітуда)</div>
-            <div class="knob y-axis" id="knobY">150</div>
-            <div class="value" id="valY">+/- 150</div>
-        </div>
-    </div> -->
 
-    <br>
-
-    <button id="BTStop">Зупинити</button>
+    <!-- <button id="BTStop">Зупинити</button> -->
 
     <br>
     <br>
@@ -58,29 +47,39 @@
     <label>Масштаб X (Точки): <span id="valX">50</span></label>
     <br>
     <input type="range" id="rangeX" min="10" max="100000" value="50" step="1">
-
-    <!-- </div> -->
-
-    <br>
-    <br>
-
-    <br>
-    <br>
-
-
-    <br>
-
-    <br>
-    <br>
+    <br><br><br><br><br><br><br>
 
 
 
 
-    <input type="text" id="ssid" placeholder="ssid">
-    <input type="text" id="pass" placeholder="pass">
+    <div id="setmenu">
+        <div id="setmenu-content">
+            <div>
+                <span id=" settH"><img id="setH" src="H.png" alt="Зима" /></span>
+            </div>
+            <div>
+                <div>
+                    <input type="text" id="ssid" placeholder="ssid">
+                </div>
+                <div>
+                    <input type="text" id="pass" placeholder="pass">
+                </div>
+            </div>
+            <div>
+                <div>
+                    <button onclick="sendWifi()" id="send">🔄 Оновити ESP32</button>
+                </div>
+                <div>
+                    <button onclick="conWifi()" id="con">Підключитись до WiFi</button>
+                </div>
+            </div>
+        </div>
+        <div id="sen" style="display: none;">
+            <span id="sensorValue"></span>
+        </div>
+    </div>
 
-    <button onclick="sendWifi()">🔄 Оновити ESP32</button>
-    <button onclick="conWifi()">Підключитись до WiFi</button>
+
 
 
     <script src="script.js"></script>
