@@ -17,7 +17,7 @@ var T = 0;
 var Tbt = 0;
 
 var stop = 0;
-var root = 0;
+var root = 1;
 
 var prevVal = 0;       // Зберігаємо попереднє значення точки
 var threshold = 0;
