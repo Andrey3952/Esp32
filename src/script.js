@@ -207,12 +207,14 @@ document.getElementsByClassName("chart-container")[0].addEventListener('click', 
     }
 });
 
-if (root == 1) {
-    document.getElementsByClassName("chart-container")[0].addEventListener('dblclick', function () {
-        document.getElementById("setmenu").style.display = "flex";
 
-    });
-}
+document.getElementsByClassName("chart-container")[0].addEventListener('dblclick', function () {
+    if (root == 1) {
+        document.getElementById("setmenu").style.display = "flex";
+    }
+
+});
+
 
 function sendWifi() {
     const ssid = document.getElementById("ssid").value;
