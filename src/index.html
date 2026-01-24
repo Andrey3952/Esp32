@@ -54,27 +54,30 @@
 
     <div id="setmenu">
         <div id="setmenu-content" class="glass-card">
-            <h2>📡 WiFi Налаштування</h2>
 
-            <div class="input-group">
-                <input type="text" id="ssid" placeholder="SSID (Назва мережі)" autocomplete="off">
-                <span class="input-icon">📶</span>
+            <div id="form-block">
+                <h2>📡 WiFi Налаштування</h2>
+
+                <div class="input-group">
+                    <input type="text" id="ssid" placeholder="SSID (Назва мережі)" autocomplete="off">
+                    <span class="input-icon">📶</span>
+                </div>
+
+                <div class="input-group">
+                    <input type="password" id="pass" placeholder="Password (Пароль)" autocomplete="new-password">
+                    <span class="input-icon">🔒</span>
+                </div>
+
+                <div class="button-group">
+                    <button onclick="conWifi()" id="con" class="btn-primary">Підключитись</button>
+                    <button onclick="sendWifi()" id="send" class="btn-secondary">🔄 Оновити ESP32</button>
+                </div>
             </div>
-
-            <div class="input-group">
-                <input type="password" id="pass" placeholder="Password (Пароль)" autocomplete="new-password">
-                <span class="input-icon">🔒</span>
-            </div>
-
-            <div class="button-group">
-                <button onclick="conWifi()" id="con" class="btn-primary">Підключитись</button>
-                <button onclick="sendWifi()" id="send" class="btn-secondary">🔄 Оновити ESP32</button>
-            </div>
-
             <div id="sen" style="display: none;">
                 <div class="loader"></div>
                 <span id="sensorValue">Очікування...</span>
             </div>
+
         </div>
     </div>
 

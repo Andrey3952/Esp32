@@ -231,6 +231,10 @@ document.getElementsByClassName("chart-container")[0].addEventListener('click', 
 
 document.getElementsByClassName("chart-container")[0].addEventListener('dblclick', function () {
     if (root == 1) {
+        // Скидаємо вигляд меню при відкритті
+        document.getElementById("form-block").style.display = "block"; // Показуємо форму
+        document.getElementById("sen").style.display = "none";         // Ховаємо лоадер
+
         document.getElementById("setmenu").style.display = "flex";
     }
 
@@ -247,8 +251,12 @@ function sendWifi() {
     }
 
     if (websocket.readyState === WebSocket.OPEN) {
-        document.getElementById("setmenu-content").style.display = "none";
-        document.getElementById("sen").style.display = "flex";
+        // ХОВАЄМО ТІЛЬКИ ПОЛЯ, А НЕ ВСЮ КАРТКУ
+        document.getElementById("form-block").style.display = "none";
+
+        // ПОКАЗУЄМО ЛОАДЕР
+        document.getElementById("sen").style.display = "block";
+
         websocket.send(JSON.stringify({
             line1: ssid,
             line2: pass
@@ -256,11 +264,9 @@ function sendWifi() {
     } else {
         alert("WebSocket не підключений");
     }
-
 }
 
 function conWifi() {
-
     const ssid = document.getElementById("ssid").value;
     const pass = document.getElementById("pass").value;
 
@@ -270,8 +276,12 @@ function conWifi() {
     }
 
     if (websocket.readyState === WebSocket.OPEN) {
-        document.getElementById("setmenu-content").style.display = "none";
-        document.getElementById("sen").style.display = "flex";
+        // ХОВАЄМО ТІЛЬКИ ПОЛЯ
+        document.getElementById("form-block").style.display = "none";
+
+        // ПОКАЗУЄМО ЛОАДЕР
+        document.getElementById("sen").style.display = "block";
+
         websocket.send(JSON.stringify({
             conSSID: ssid,
             conPASS: pass
