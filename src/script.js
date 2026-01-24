@@ -1,6 +1,6 @@
-var gateway = `ws://${window.location.hostname}/ws`;
+// var gateway = `ws://${window.location.hostname}/ws`;
 // var gateway = `ws://${window.location.hostname}:8765/ws`;
-// var gateway = `ws://192.168.0.176/ws`;
+var gateway = `ws://192.168.0.176/ws`;
 
 
 // var websocket;
@@ -217,6 +217,8 @@ function sendWifi() {
     }
 
     if (websocket.readyState === WebSocket.OPEN) {
+        document.getElementById("setmenu-content").style.display = "none";
+        document.getElementById("sen").style.display = "flex";
         websocket.send(JSON.stringify({
             line1: ssid,
             line2: pass

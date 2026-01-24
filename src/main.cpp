@@ -326,7 +326,7 @@ void loop()
       digitalWrite(pin_SS, LOW);
       uint16_t rawResult = SPI.transfer16(0x0000);
       digitalWrite(pin_SS, HIGH);
-      rawResult = rawResult >> 1;
+      // rawResult = rawResult >> 1;
       rawValues[i] = rawResult & 0x0FFF;
       Serial.println(rawValues[i]);
       delayMicroseconds(SAMPLING_DELAY_MICROS);
