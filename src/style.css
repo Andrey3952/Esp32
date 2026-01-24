@@ -116,3 +116,283 @@ body {
         transform: rotate(360deg);
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+input[type=range] {
+    -webkit-appearance: none;
+    width: 300px;
+    /* Або 100% якщо вони в контейнері */
+    background: transparent;
+    margin: 10px 0;
+}
+
+/* Стиль "доріжки" (track) */
+input[type=range]::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 8px;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.5);
+    /* Напівпрозорий білий */
+    border-radius: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+/* Стиль "ручки" (thumb) */
+input[type=range]::-webkit-slider-thumb {
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    background: #fff;
+    /* Біла ручка */
+    border: 2px solid #ff69b4;
+    /* Рожева обводка */
+    cursor: pointer;
+    -webkit-appearance: none;
+    margin-top: -7px;
+    /* Центруємо ручку відносно лінії (8px/2 - 20px/2 - 1 border) */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    /* Тінь для об'єму */
+    transition: transform 0.1s;
+}
+
+/* Ефект при натисканні */
+input[type=range]:active::-webkit-slider-thumb {
+    transform: scale(1.2);
+    background: #ff69b4;
+}
+
+
+
+
+
+#controls-container {
+    background: rgba(255, 255, 255, 0.25);
+    /* Прозорий білий */
+    backdrop-filter: blur(10px);
+    /* Ефект розмиття фону */
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 20px 40px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+
+    /* Центрування */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    max-width: 500px;
+    margin: 10px auto;
+    /* Відступ від графіка */
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* --- 1. Фон затемнення (Overlay) --- */
+#setmenu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 105, 180, 0.3);
+    /* Напівпрозорий рожевий */
+    backdrop-filter: blur(8px);
+    /* Розмиття фону */
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    /* Центруємо вміст */
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+}
+
+/* --- 2. Картка (Glass Card) --- */
+.glass-card {
+    background: rgba(255, 255, 255, 0.85);
+    /* Майже білий */
+    padding: 30px;
+    border-radius: 20px;
+    width: 320px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1), 0 5px 15px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(255, 255, 255, 1);
+    text-align: center;
+    transform: scale(1);
+    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+h2 {
+    color: #333;
+    font-family: 'Nunito', sans-serif;
+    /* Твій шрифт */
+    margin-bottom: 25px;
+    font-size: 20px;
+}
+
+/* --- 3. Поля вводу (Inputs) --- */
+.input-group {
+    position: relative;
+    margin-bottom: 15px;
+}
+
+input[type="text"],
+input[type="password"] {
+    width: 100%;
+    padding: 12px 15px 12px 40px;
+    /* Відступ зліва для іконки */
+    border: 2px solid #eee;
+    border-radius: 12px;
+    outline: none;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+    /* Щоб padding не ламав ширину */
+    background: #f9f9f9;
+}
+
+input:focus {
+    border-color: #ff69b4;
+    /* Рожевий при фокусі */
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(255, 105, 180, 0.1);
+}
+
+.input-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+    opacity: 0.6;
+}
+
+/* --- 4. Кнопки --- */
+.button-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+button {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+    font-family: 'Nunito', sans-serif;
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+/* Основна кнопка (Connect) */
+.btn-primary {
+    background: #ff69b4;
+    color: white;
+    box-shadow: 0 4px 15px rgba(255, 105, 180, 0.3);
+}
+
+.btn-primary:hover {
+    background: #ff4da6;
+}
+
+/* Другорядна кнопка (Update) */
+.btn-secondary {
+    background: #fff;
+    color: #555;
+    border: 2px solid #eee;
+}
+
+.btn-secondary:hover {
+    background: #f0f0f0;
+    color: #333;
+}
+
+/* --- 5. Анімації --- */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes popIn {
+    from {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* --- 6. Лоадер для статусу --- */
+.loader {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #ff69b4;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+    margin: 10px auto;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+#sen {
+    margin-top: 20px;
+    color: #666;
+    font-weight: 600;
+}
