@@ -1,6 +1,6 @@
-// var gateway = `ws://${window.location.hostname}/ws`;
+var gateway = `ws://${window.location.hostname}/ws`;
 // var gateway = `ws://${window.location.hostname}:8765/ws`;
-var gateway = `ws://192.168.0.176/ws`;
+// var gateway = `ws://192.168.0.176/ws`;
 
 
 // var websocket;
@@ -175,24 +175,24 @@ function updateChart(val) {
 
 }
 
-document.getElementById('BtnT').addEventListener('click', function () {
-    const Tc = (Number(document.getElementById('InputT').value)) + 1;
-    maxDataPoints = 1;
-    for (let i = 1; i < Tc; i++) {
-        maxDataPoints += cu;
-    }
-    Tbt = 0;
-});
+// document.getElementById('BtnT').addEventListener('click', function () {
+//     const Tc = (Number(document.getElementById('InputT').value)) + 1;
+//     maxDataPoints = 1;
+//     for (let i = 1; i < Tc; i++) {
+//         maxDataPoints += cu;
+//     }
+//     Tbt = 0;
+// });
 
 
 
-document.getElementById('settings').addEventListener('click', function () {
-    document.getElementById("setmenu").style.display = "flex";
-    // document.getElementById("v").style.display = "flex";
+// document.getElementById('settings').addEventListener('click', function () {
+//     document.getElementById("setmenu").style.display = "flex";
+//     // document.getElementById("v").style.display = "flex";
 
-});
+// });
 
-document.getElementById('setH').addEventListener('click', function () {
+document.getElementById('setmenu').addEventListener('dblclick', function () {
     document.getElementById("setmenu").style.display = "none";
 });
 
@@ -205,6 +205,11 @@ document.getElementsByClassName("chart-container")[0].addEventListener('click', 
         stop = 0;
         document.getElementById('BTStop').textContent = "Зупинити";
     }
+});
+
+document.getElementsByClassName("chart-container")[0].addEventListener('dblclick', function () {
+    document.getElementById("setmenu").style.display = "flex";
+
 });
 
 function sendWifi() {
