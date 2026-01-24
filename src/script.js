@@ -144,9 +144,9 @@ function initWebSocket() {
         }
         else {
             document.getElementById("sensorValue").innerText = event.data;
-            // if (event.data == "WiFi OK!") {
-            //     document.getElementById("setmenu").style.display = "none";
-            // }
+            if (event.data == "WiFi OK!") {
+                document.getElementById("setmenu").style.display = "none";
+            }
 
             if (event.data == "Успіх! Перезавантаження...") {
                 // document.getElementById("setmenu").style.display = "none";
