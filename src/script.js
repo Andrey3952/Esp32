@@ -199,11 +199,11 @@ document.getElementById('setmenu').addEventListener('dblclick', function () {
 document.getElementsByClassName("chart-container")[0].addEventListener('click', function () {
     if (stop == 0) {
         stop = 1;
-        document.getElementById('BTStop').textContent = "Продовжити";
+        // document.getElementById('BTStop').textContent = "Продовжити";
     }
     else {
         stop = 0;
-        document.getElementById('BTStop').textContent = "Зупинити";
+        // document.getElementById('BTStop').textContent = "Зупинити";
     }
 });
 
