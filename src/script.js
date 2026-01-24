@@ -33,6 +33,22 @@ function renderLoop() {
     requestAnimationFrame(renderLoop); // Плануємо наступний кадр
 }
 
+function closeMenu() {
+    const menu = document.getElementById("setmenu");
+
+    // 1. Додаємо клас, щоб запустити анімацію зникання
+    menu.classList.add("hiding");
+
+    // 2. Чекаємо 300мс (стільки ж, скільки триває анімація в CSS)
+    setTimeout(() => {
+        // 3. Реально ховаємо елемент
+        menu.style.display = "none";
+
+        // 4. Прибираємо клас hiding, щоб наступного разу вікно відкрилось нормально
+        menu.classList.remove("hiding");
+    }, 300);
+}
+
 // --- 1. Ініціалізація графіка ---
 window.addEventListener('load', function () {
     initChart();
@@ -197,7 +213,8 @@ function updateChart(val) {
 // });
 
 document.getElementById('setmenu').addEventListener('dblclick', function () {
-    document.getElementById("setmenu").style.display = "none";
+    // document.getElementById("setmenu").style.display = "none";
+    closeMenu();
 });
 
 document.getElementsByClassName("chart-container")[0].addEventListener('click', function () {
