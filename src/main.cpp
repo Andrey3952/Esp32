@@ -175,7 +175,7 @@ void startCon()
   ws.textAll("Підключення до " + String(customSSID) + "...");
 
   int i = 0;
-  while (WiFi.status() != WL_CONNECTED && i < 20)
+  while (WiFi.status() != WL_CONNECTED && i < 30)
   {
     delay(500);
     i++;
@@ -183,6 +183,19 @@ void startCon()
 
   if (WiFi.status() == WL_CONNECTED)
   {
+    // --- ГОЛОВНА ЗМІНА ТУТ ---
+    // Ми підключилися, але телефон клієнта міг відвалитися через зміну каналу WiFi.
+    // Даємо йому час перепідключитися до нашої AP.
+
+    for (int k = 0; k < 5; k++)
+    {
+      delay(1000); // Чекаємо сумарно ще трохи часу
+                   // Можна відправляти пінг, щоб тримати сокет живим, або просто чекати
+    }
+
+    // Відправляємо повідомлення кілька разів для надійності
+    ws.textAll("WiFi OK!");
+    delay(500);
     ws.textAll("WiFi OK!");
   }
   else
