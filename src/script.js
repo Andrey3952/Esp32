@@ -69,8 +69,8 @@ function initChart() {
                 borderColor: 'rgb(245, 110, 174)',
                 borderWidth: 2,
                 pointRadius: 0,
-                tension: 0, // Трохи згладимо лінію
-                stepped: true,
+                tension: 0.4, // Трохи згладимо лінію
+                stepped: false,
                 fill: false
             }]
         },
@@ -332,4 +332,5 @@ rangeX.addEventListener('input', function () {
         }
     }
 });
+
 
