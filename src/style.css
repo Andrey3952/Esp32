@@ -303,7 +303,7 @@ button:active {
 /* --- 6. Лоадер для статусу --- */
 .loader {
     border: 4px solid #f3f3f3;
-    border-top: 4px solid #ff69b4;
+    border-top: 4px solid hsl(330, 100%, 71%);
     border-radius: 50%;
     width: 30px;
     height: 30px;
@@ -332,7 +332,8 @@ button:active {
 
 /* 1. Клас, який ми будемо вішати через JS для закриття */
 #setmenu.hiding {
-    animation: fadeOut 0.3s forwards; /* forwards зберігає кінцевий стан */
+    animation: fadeOut 0.3s forwards;
+    /* forwards зберігає кінцевий стан */
 }
 
 #setmenu.hiding .glass-card {
@@ -341,11 +342,90 @@ button:active {
 
 /* 2. Самі Keyframes (зворотні до появи) */
 @keyframes fadeOut {
-    from { opacity: 1; }
-    to { opacity: 0; }
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+    }
 }
 
 @keyframes popOut {
-    from { transform: scale(1); opacity: 1; }
-    to { transform: scale(0.8); opacity: 0; }
+    from {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    to {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+}
+
+#rangeY,
+#rangeX {
+    background: #fcd5e8;
+    border: 0px solid #ccc;
+    /* Тонка ледь помітна рамка замість стандартної */
+    outline: none;
+    border-radius: 15px;
+    width: 60px;
+    padding: 5px;
+}
+
+
+
+
+/* Контейнер для перемикача */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 26px;
+}
+
+/* Приховуємо стандартний чекбокс */
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+/* Фон перемикача */
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #fcd5e8;
+    transition: .4s;
+    border-radius: 34px;
+    /* Закруглення фону */
+}
+
+/* Кружечок (бігунок) всередині */
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+    /* Робимо бігунок круглим */
+}
+
+/* Зміна кольору фону при натисканні */
+input:checked+.slider {
+    background-color: #f367a6;
+}
+
+/* Рух бігунка вправо при натисканні */
+input:checked+.slider:before {
+    transform: translateX(24px);
 }

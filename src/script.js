@@ -1,6 +1,6 @@
-var gateway = `ws://${window.location.hostname}/ws`;
+// var gateway = `ws://${window.location.hostname}/ws`;
 // var gateway = `ws://${window.location.hostname}:8765/ws`;
-// var gateway = `ws://192.168.0.176/ws`;
+var gateway = `ws://192.168.0.176/ws`;
 
 
 // var websocket;
@@ -113,8 +113,8 @@ function initWebSocket() {
             let lastValue = 0;
 
             points.forEach(function (point) {
-                // var dataVal = ((point * 10) / 4095) - 5;
-                var dataVal = point;
+                var dataVal = ((point * 10) / 4095) - 5;
+                // var dataVal = point;
 
 
                 lastValue = dataVal;
@@ -229,6 +229,18 @@ document.getElementsByClassName("chart-container")[0].addEventListener('click', 
 });
 
 
+// document.getElementsByClassName("chart-container")[0].addEventListener('click', function () {
+//     if (stop == 0) {
+//         stop = 1;
+//         // document.getElementById('BTStop').textContent = "Продовжити";
+//     }
+//     else {
+//         stop = 0;
+//         // document.getElementById('BTStop').textContent = "Зупинити";
+//     }
+// });
+
+
 document.getElementsByClassName("chart-container")[0].addEventListener('dblclick', function () {
     if (root == 1) {
         // Скидаємо вигляд меню при відкритті
@@ -295,7 +307,7 @@ function conWifi() {
 // Знаходимо елементи
 const rangeY = document.getElementById('rangeY');
 const rangeX = document.getElementById('rangeX');
-const labelY = document.getElementById('valY');
+const labelY = document.getElementById('rangeY');
 const labelX = document.getElementById('valX');
 
 // --- Обробка зміни масштабу Y ---
@@ -330,6 +342,23 @@ rangeX.addEventListener('input', function () {
             myChart.data.datasets[0].data.splice(0, pointsToRemove);
             needsUpdate = true; // Кажемо renderLoop перемалювати
         }
+    }
+});
+
+
+
+
+
+
+const toggle = document.getElementById('checkbox');
+
+// Додаємо слухач подій
+toggle.addEventListener('change', function () {
+    if (this.checked) {
+        // myChart.data.datasets[0].tension = 0.4;
+        myChart.data.datasets[0].stepped = false;
+    } else {
+        myChart.data.datasets[0].stepped = true;
     }
 });
 
