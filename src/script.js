@@ -69,8 +69,8 @@ function initChart() {
                 borderColor: 'rgb(245, 110, 174)',
                 borderWidth: 2,
                 pointRadius: 0,
-                tension: 0, // Трохи згладимо лінію
-                stepped: true,
+                tension: 0.4, // Трохи згладимо лінію
+                stepped: false,
                 fill: false
             }]
         },
@@ -308,7 +308,7 @@ function conWifi() {
 const rangeY = document.getElementById('rangeY');
 const rangeX = document.getElementById('rangeX');
 const labelY = document.getElementById('rangeY');
-const labelX = document.getElementById('valX');
+const labelX = document.getElementById('rangeX');
 
 // --- Обробка зміни масштабу Y ---
 rangeY.addEventListener('input', function () {
@@ -342,23 +342,6 @@ rangeX.addEventListener('input', function () {
             myChart.data.datasets[0].data.splice(0, pointsToRemove);
             needsUpdate = true; // Кажемо renderLoop перемалювати
         }
-    }
-});
-
-
-
-
-
-
-const toggle = document.getElementById('checkbox');
-
-// Додаємо слухач подій
-toggle.addEventListener('change', function () {
-    if (this.checked) {
-        // myChart.data.datasets[0].tension = 0.4;
-        myChart.data.datasets[0].stepped = false;
-    } else {
-        myChart.data.datasets[0].stepped = true;
     }
 });
 
