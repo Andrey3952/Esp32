@@ -15,7 +15,6 @@ char customSSID[32] = "";
 char customPass[32] = "";
 const char *ssidAR = "ESP32_AP";
 const char *passwordAR = "12345678";
-// https://raw.githubusercontent.com/Andrey3952/Esp32/main/src/
 
 const String gh_base = "https://raw.githubusercontent.com/Andrey3952/Esp32/main/src/";
 const String file_html = "index.html";
@@ -26,9 +25,7 @@ const String chart_js = "chart.js";
 bool shouldUpdate = false;
 bool shouldCon = false;
 
-// Створюємо об'єкт сервера на порту 80
 AsyncWebServer server(80);
-// Створюємо об'єкт WebSocket на шляху /ws
 AsyncWebSocket ws("/ws");
 
 const char fallback_html[] PROGMEM = R"rawliteral(
@@ -45,46 +42,23 @@ const char fallback_html[] PROGMEM = R"rawliteral(
 <body>
   <h1>Увага: Немає зв'язку з GitHub</h1>
   <p>Не вдалося завантажити оновлення.</p>
-  <p>Це резервна сторінка з пам'яті ESP32.</p>
-  <p>Привіт з ESP32!</p>
-
-    <input type="text" id="ssid" placeholder="ssid">
-    <input type="text" id="pass" placeholder="pass">
-
+  <input type="text" id="ssid" placeholder="ssid">
+  <input type="text" id="pass" placeholder="pass">
   <button onclick="sendWifi()">🔄 Перезавантажити ESP32</button>
-
   <div id="status">Очікування...</div>
-
- 
   <script>
-const ws = new WebSocket("ws://192.168.4.1/ws");
-
-ws.onmessage = function(event) {
-       // Цей код оновлює текст на екрані, коли ESP надсилає статус
-       document.getElementById("status").innerText = event.data;
+    const ws = new WebSocket("ws://192.168.4.1/ws");
+    ws.onmessage = function(event) {
+        document.getElementById("status").innerText = event.data;
     };
-
-function sendWifi() {
-  const ssid = document.getElementById("ssid").value;
-  const pass = document.getElementById("pass").value;
-
-  if (!ssid) {
-    alert("SSID не може бути порожнім");
-    return;
-  }
-
-  if (ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({
-      line1: ssid,
-      line2: pass
-    }));
-  } else {
-    alert("WebSocket не підключений");
-  }
-}
-</script>
-
- 
+    function sendWifi() {
+      const ssid = document.getElementById("ssid").value;
+      const pass = document.getElementById("pass").value;
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ line1: ssid, line2: pass }));
+      }
+    }
+  </script>
 </body>
 </html>
 )rawliteral";
@@ -93,21 +67,17 @@ bool downloadFile(String filename)
 {
   String url = gh_base + filename;
   Serial.println("Downloading: " + url);
-
   HTTPClient http;
   WiFiClientSecure client;
-  client.setInsecure(); // Ігноруємо SSL сертифікати (найпростіший спосіб для GitHub)
-
+  client.setInsecure();
   if (http.begin(client, url))
   {
     int httpCode = http.GET();
     if (httpCode == HTTP_CODE_OK)
     {
-      // Відкриваємо файл для запису
       File file = LittleFS.open("/" + filename, "w");
       if (file)
       {
-        // Записуємо потік даних з інтернету прямо в файл
         http.writeToStream(&file);
         file.close();
         Serial.println("File saved: " + filename);
@@ -115,40 +85,29 @@ bool downloadFile(String filename)
         return true;
       }
     }
-    else
-    {
-      Serial.printf("HTTP Error: %d\n", httpCode);
-    }
     http.end();
   }
-  Serial.println("Download failed!");
   return false;
 }
 
 void startUpdateProcess()
 {
-  // Перемикаємо в режим AP+STA, щоб не розірвати зв'язок з телефоном/компом
   WiFi.mode(WIFI_AP_STA);
   WiFi.begin(customSSID, customPass);
-
   ws.textAll("Підключення до " + String(customSSID) + "...");
-
   int i = 0;
   while (WiFi.status() != WL_CONNECTED && i < 20)
   {
     delay(500);
     i++;
   }
-
   if (WiFi.status() == WL_CONNECTED)
   {
     ws.textAll("WiFi OK! Качаємо файли...");
-
     bool ok1 = downloadFile(file_html);
     bool ok2 = downloadFile(file_css);
     bool ok3 = downloadFile(file_js);
     bool ok4 = downloadFile(chart_js);
-
     if (ok1 && ok2 && ok3 && ok4)
     {
       ws.textAll("Успіх! Перезавантаження...");
@@ -168,32 +127,21 @@ void startUpdateProcess()
 
 void startCon()
 {
-  // Перемикаємо в режим AP+STA, щоб не розірвати зв'язок з телефоном/компом
   WiFi.mode(WIFI_AP_STA);
   WiFi.begin(customSSID, customPass);
-
   ws.textAll("Підключення до " + String(customSSID) + "...");
-
   int i = 0;
   while (WiFi.status() != WL_CONNECTED && i < 30)
   {
     delay(500);
     i++;
   }
-
   if (WiFi.status() == WL_CONNECTED)
   {
-    // --- ГОЛОВНА ЗМІНА ТУТ ---
-    // Ми підключилися, але телефон клієнта міг відвалитися через зміну каналу WiFi.
-    // Даємо йому час перепідключитися до нашої AP.
-
     for (int k = 0; k < 5; k++)
     {
-      delay(1000); // Чекаємо сумарно ще трохи часу
-                   // Можна відправляти пінг, щоб тримати сокет живим, або просто чекати
+      delay(1000);
     }
-
-    // Відправляємо повідомлення кілька разів для надійності
     ws.textAll("WiFi OK!");
     delay(500);
     ws.textAll("WiFi OK!");
@@ -204,7 +152,6 @@ void startCon()
   }
 }
 
-// --- Функція обробки подій WebSocket ---
 void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type,
              void *arg, uint8_t *data, size_t len)
 {
@@ -213,45 +160,35 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType 
   case WS_EVT_CONNECT:
     Serial.printf("WebSocket client #%u connected\n", client->id());
     break;
-
   case WS_EVT_DISCONNECT:
     Serial.printf("WebSocket client #%u disconnected\n", client->id());
     break;
 
   case WS_EVT_DATA:
+  { // <--- ВАЖЛИВО: Дужка відкривається тут для виправлення помилки компіляції
     AwsFrameInfo *info = (AwsFrameInfo *)arg;
     if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT)
     {
       data[len] = 0;
       String message = (char *)data;
-
       if (message == "RESET")
       {
-        Serial.println("Reboot command received!");
         ESP.restart();
       }
       else
       {
-        // --- ТУТ БУЛА ПОМИЛКА ---
         StaticJsonDocument<200> doc;
-        // 1. Парсимо JSON
         DeserializationError error = deserializeJson(doc, message);
-
         if (!error)
         {
-          // 2. Зчитуємо дані
           const char *l1 = doc["line1"];
           const char *l2 = doc["line2"];
-
           const char *conSSID = doc["conSSID"];
           const char *conPASS = doc["conPASS"];
-
           if (l1 && l2)
           {
             strlcpy(customSSID, l1, sizeof(customSSID));
             strlcpy(customPass, l2, sizeof(customPass));
-
-            // 3. ЗАПУСКАЄМО ПРОЦЕС
             shouldUpdate = true;
           }
           if (conSSID && conPASS)
@@ -264,39 +201,35 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType 
       }
     }
     break;
+  } // <--- Дужка закривається тут
   }
 }
 
 void setup()
 {
   Serial.begin(115200);
-
-  // 1. Монтуємо файлову систему
   if (!LittleFS.begin(true))
   {
     Serial.println("Mount Failed");
     return;
   }
 
-  // 2. Налаштування SPI
   pinMode(pin_SS, OUTPUT);
   digitalWrite(pin_SS, HIGH);
   SPI.begin(pin_SCLK, pin_MISO, pin_MOSI, pin_SS);
+  // Налаштовуємо SPI глобально тут
   SPI.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE0));
 
-  // 3. Запускаємо власну точку доступу (щоб можна було зайти)
   WiFi.mode(WIFI_AP);
   WiFi.softAP(ssidAR, passwordAR);
   Serial.print("AP IP: ");
   Serial.println(WiFi.softAPIP());
 
-  // 4. Перевіряємо, чи є файли сайту
   bool filesExist = LittleFS.exists("/index.html") && LittleFS.exists("/style.css") && LittleFS.exists("/script.js");
 
   ws.onEvent(onEvent);
   server.addHandler(&ws);
 
-  // 5. Вирішуємо, що показувати
   if (filesExist)
   {
     Serial.println("Starting Normal Mode");
@@ -308,22 +241,25 @@ void setup()
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
               { request->send(200, "text/html", fallback_html); });
   }
-
   server.begin();
 }
-#define SAMPLES_PER_PACKET 200
-#define SAMPLING_DELAY_MICROS 500
+// --- НАЛАШТУВАННЯ ---
+#define SAMPLING_DELAY_MICROS 16667 // 60 Гц (частота збору даних)
+#define SAMPLES_PER_PACKET 5        // Розмір пачки (буфер)
 
-uint16_t rawValues[SAMPLES_PER_PACKET];
+// Глобальні змінні
+uint16_t packetBuffer[SAMPLES_PER_PACKET];
+int packetIndex = 0;
+unsigned long previousMicros = 0;
 
 void loop()
 {
-  ws.cleanupClients();
+  ws.cleanupClients(); // WiFi працює стабільно
 
   if (shouldUpdate)
   {
-    startUpdateProcess(); // Запускаємо довгий процес
-    shouldUpdate = false; // Скидаємо прапорець, щоб не запустити знову
+    startUpdateProcess();
+    shouldUpdate = false;
   }
   if (shouldCon)
   {
@@ -331,19 +267,32 @@ void loop()
     shouldCon = false;
   }
 
+  // Працюємо, тільки якщо є клієнт
   if (!shouldCon && !shouldUpdate && ws.count() > 0)
   {
-    for (int i = 0; i < SAMPLES_PER_PACKET; i++)
+    unsigned long currentMicros = micros();
+
+    // 1. Таймер спрацьовує 60 разів на секунду
+    if (currentMicros - previousMicros >= SAMPLING_DELAY_MICROS)
     {
+      // Щоб не накопичувати похибку часу, додаємо інтервал до попереднього часу
+      previousMicros += SAMPLING_DELAY_MICROS;
+
+      // 2. Зчитуємо SPI
       digitalWrite(pin_SS, LOW);
       uint16_t rawResult = SPI.transfer16(0x0000);
       digitalWrite(pin_SS, HIGH);
-      // rawResult = rawResult >> 1;
-      rawValues[i] = rawResult & 0x0FFF;
-      Serial.println(rawValues[i]);
-      delayMicroseconds(SAMPLING_DELAY_MICROS);
+
+      // 3. Кладемо в буфер (маскуємо 12 біт)
+      packetBuffer[packetIndex] = rawResult & 0x0FFF;
+      packetIndex++;
+
+      // 4. Якщо назбирали 5 точок -> ВІДПРАВЛЯЄМО
+      if (packetIndex >= SAMPLES_PER_PACKET)
+      {
+        ws.binaryAll((uint8_t *)packetBuffer, SAMPLES_PER_PACKET * 2);
+        packetIndex = 0; // Починаємо збирати нову пачку
+      }
     }
-    SPI.endTransaction();
-    ws.binaryAll((uint8_t *)rawValues, SAMPLES_PER_PACKET * 2);
   }
 }
