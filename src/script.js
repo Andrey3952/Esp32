@@ -22,6 +22,8 @@ var root = 1;
 var prevVal = 0;       // Зберігаємо попереднє значення точки
 var threshold = 0;
 
+var globalX = 0;
+
 let num = Math.floor(Math.random() * 256);
 
 function renderLoop() {
@@ -61,7 +63,6 @@ function initChart() {
     myChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: [],
             datasets: [{
                 label: 'Signal',
                 data: [],
@@ -69,7 +70,7 @@ function initChart() {
                 borderColor: 'rgb(245, 110, 174)',
                 borderWidth: 2,
                 pointRadius: 0,
-                tension: 0.4, // Трохи згладимо лінію
+                tension: 0, // Трохи згладимо лінію
                 stepped: false,
                 fill: false
             }]
@@ -78,9 +79,13 @@ function initChart() {
             responsive: true,
             maintainAspectRatio: false,
             animation: false,
+            parsing: false,
             interaction: { intersect: false },
             scales: {
-                x: { display: true },
+                x: {
+                    type: 'linear', // <--- ЗМІНЮЄМО ТИП ОСІ
+                    display: true,
+                },
                 y: { display: true }
             }
         }
@@ -108,7 +113,7 @@ function initWebSocket() {
         if (event.data instanceof ArrayBuffer) {
             const points = new Uint16Array(event.data);
 
-            let newLabels = [];
+            // let newLabels = [];
             let newData = [];
             let lastValue = 0;
 
@@ -136,22 +141,24 @@ function initWebSocket() {
 
                 prevVal = dataVal;
 
-                newLabels.push(""); // Пуста мітка швидша
-                newData.push(dataVal);
+                lastValue = dataVal; // для відображення цифри
+
+                // newLabels.push(""); <--- ВИДАЛЯЄМО
+
+                // ДОДАЄМО ТОЧКУ З КООРДИНАТОЮ X
+                newData.push({ x: globalX++, y: dataVal });
             });
             if (stop == 0) {
                 // 1. Оновлюємо цифру НА ЕКРАНІ (1 раз за пакет, а не 100)
                 document.getElementById('sensorValue').innerHTML = lastValue;
 
-                myChart.data.labels.push(...newLabels);
+                // myChart.data.labels.push(...newLabels);
                 myChart.data.datasets[0].data.push(...newData);
 
-                let totalPoints = myChart.data.labels.length;
-                let pointsToRemove = totalPoints - maxDataPoints;
+                let currentLength = myChart.data.datasets[0].data.length;
 
-                if (pointsToRemove > 0) {
-                    // splice видаляє пачку даних миттєво
-                    myChart.data.labels.splice(0, pointsToRemove);
+                if (currentLength > maxDataPoints) {
+                    let pointsToRemove = currentLength - maxDataPoints;
                     myChart.data.datasets[0].data.splice(0, pointsToRemove);
                 }
 
@@ -180,19 +187,15 @@ function initWebSocket() {
     };
 }
 function updateChart(val) {
-    const now = new Date();
-    const timeLabel = now.getSeconds() + ":" + now.getMilliseconds();
+    // const now = new Date(); // Більше не потрібно для осі X
 
-    myChart.data.labels.push(timeLabel);
-    myChart.data.datasets[0].data.push(val);
+    myChart.data.datasets[0].data.push({ x: globalX++, y: val });
 
-    // Використовуємо змінну maxDataPoints, яку змінює перша крутилка
-    while (myChart.data.labels.length > maxDataPoints) {
-        myChart.data.labels.shift();
+    // ВИПРАВЛЕНО: Перевіряємо довжину даних
+    while (myChart.data.datasets[0].data.length > maxDataPoints) {
         myChart.data.datasets[0].data.shift();
     }
-    myChart.update('none'); // Режим 'none' дуже важливий для FPS
-
+    myChart.update('none');
 }
 
 // document.getElementById('BtnT').addEventListener('click', function () {
@@ -333,15 +336,18 @@ rangeX.addEventListener('input', function () {
     // 2. Оновлюємо підпис
     labelX.innerText = maxDataPoints;
 
-    // 3. (Опціонально) Миттєво обрізаємо графік, щоб не чекати нових даних
-    // Якщо ми зменшили масштаб, зайві точки треба видалити одразу
+    // 3. Миттєво обрізаємо графік
     if (stop == 0) {
-        if (myChart.data.labels.length > maxDataPoints) {
-            let pointsToRemove = myChart.data.labels.length - maxDataPoints;
-            myChart.data.labels.splice(0, pointsToRemove);
+        // ВИПРАВЛЕНО: Дивимось на довжину даних, а не labels
+        let currentLength = myChart.data.datasets[0].data.length;
+
+        if (currentLength > maxDataPoints) {
+            let pointsToRemove = currentLength - maxDataPoints;
+
+            // ВИПРАВЛЕНО: Видаляємо тільки з datasets, labels не чіпаємо
             myChart.data.datasets[0].data.splice(0, pointsToRemove);
-            needsUpdate = true; // Кажемо renderLoop перемалювати
+
+            needsUpdate = true;
         }
     }
 });
-

@@ -222,6 +222,7 @@ void setup()
 
   WiFi.mode(WIFI_AP);
   WiFi.softAP(ssidAR, passwordAR);
+  WiFi.setSleep(false);
   Serial.print("AP IP: ");
   Serial.println(WiFi.softAPIP());
 
@@ -245,7 +246,7 @@ void setup()
 }
 // --- НАЛАШТУВАННЯ ---
 #define SAMPLING_DELAY_MICROS 16667 // 60 Гц (частота збору даних)
-#define SAMPLES_PER_PACKET 5        // Розмір пачки (буфер)
+#define SAMPLES_PER_PACKET 500      // Розмір пачки (буфер)
 
 // Глобальні змінні
 uint16_t packetBuffer[SAMPLES_PER_PACKET];
@@ -272,26 +273,35 @@ void loop()
   {
     unsigned long currentMicros = micros();
 
-    // 1. Таймер спрацьовує 60 разів на секунду
     if (currentMicros - previousMicros >= SAMPLING_DELAY_MICROS)
     {
-      // Щоб не накопичувати похибку часу, додаємо інтервал до попереднього часу
-      previousMicros += SAMPLING_DELAY_MICROS;
+      // ЗАХИСТ ВІД НАКОПИЧЕННЯ ЧЕРГИ (якщо відстали більше ніж на 1 кадр - просто скидаємо таймер)
+      if (currentMicros - previousMicros > SAMPLING_DELAY_MICROS * 2)
+      {
+        previousMicros = currentMicros;
+      }
+      else
+      {
+        previousMicros += SAMPLING_DELAY_MICROS;
+      }
 
-      // 2. Зчитуємо SPI
+      // ... SPI читання ...
+
       digitalWrite(pin_SS, LOW);
       uint16_t rawResult = SPI.transfer16(0x0000);
       digitalWrite(pin_SS, HIGH);
 
-      // 3. Кладемо в буфер (маскуємо 12 біт)
       packetBuffer[packetIndex] = rawResult & 0x0FFF;
       packetIndex++;
 
-      // 4. Якщо назбирали 5 точок -> ВІДПРАВЛЯЄМО
       if (packetIndex >= SAMPLES_PER_PACKET)
       {
-        ws.binaryAll((uint8_t *)packetBuffer, SAMPLES_PER_PACKET * 2);
-        packetIndex = 0; // Починаємо збирати нову пачку
+        // ВАЖЛИВО: Перевіряємо, чи можна відправляти, щоб не забити буфер
+        if (ws.availableForWriteAll())
+        {
+          ws.binaryAll((uint8_t *)packetBuffer, SAMPLES_PER_PACKET * 2);
+        }
+        packetIndex = 0;
       }
     }
   }
