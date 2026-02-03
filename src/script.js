@@ -1,353 +1,257 @@
-var gateway = `ws://${window.location.hostname}/ws`;
-// var gateway = `ws://${window.location.hostname}:8765/ws`;
-// var gateway = `ws://192.168.0.176/ws`;
+// var gateway = `ws://${window.location.hostname}/ws`;
+var gateway = `ws://192.168.0.176/ws`;
+var websocket;
+var uplot; // Об'єкт графіка
 
+// Дані для uPlot зберігаються як масив масивів: [ [x1, x2...], [y1, y2...] ]
+var dataX = [];
+var dataY = [];
 
-// var websocket;
-var myChart;
-var needsUpdate = false; // Прапорець
-
-// Змінні конфігурації
-var maxDataPoints = 50; // Це наш t (вісь X)
-var yAxisRange = 5;   // Це межа Y (від -150 до +150)
-
-var st = 0;
-var cu = 0;
-var T = 0;
-var Tbt = 0;
+var needsUpdate = false;
+var maxDataPoints = 500; // Початкове значення X
+var yAxisRange = 5;      // Початкове значення Y
 
 var stop = 0;
 var root = 1;
 
-var prevVal = 0;       // Зберігаємо попереднє значення точки
+// Логіка тригера (залишив вашу логіку)
+var st = 0;
+var cu = 0;
+var prevVal = 0;
 var threshold = 0;
 
-var globalX = 0;
+var globalX = 0; // Глобальний лічильник часу
 
-let num = Math.floor(Math.random() * 256);
-
+// --- Основний цикл малювання (60 FPS) ---
 function renderLoop() {
-
-    if (needsUpdate && myChart) {
-        myChart.update('none'); // Малюємо тільки якщо є нові дані
-        needsUpdate = false;    // Скидаємо прапорець
+    if (needsUpdate && uplot) {
+        // uPlot приймає дані у форматі [ArrayX, ArrayY]
+        uplot.setData([dataX, dataY]);
+        needsUpdate = false;
     }
-    requestAnimationFrame(renderLoop); // Плануємо наступний кадр
+    requestAnimationFrame(renderLoop);
 }
 
-function closeMenu() {
-    const menu = document.getElementById("setmenu");
-
-    // 1. Додаємо клас, щоб запустити анімацію зникання
-    menu.classList.add("hiding");
-
-    // 2. Чекаємо 300мс (стільки ж, скільки триває анімація в CSS)
-    setTimeout(() => {
-        // 3. Реально ховаємо елемент
-        menu.style.display = "none";
-
-        // 4. Прибираємо клас hiding, щоб наступного разу вікно відкрилось нормально
-        menu.classList.remove("hiding");
-    }, 300);
-}
-
-// --- 1. Ініціалізація графіка ---
+// --- Ініціалізація ---
 window.addEventListener('load', function () {
     initChart();
     initWebSocket();
     renderLoop();
 });
 
+// Закриття меню
+function closeMenu() {
+    const menu = document.getElementById("setmenu");
+    menu.classList.add("hiding");
+    setTimeout(() => {
+        menu.style.display = "none";
+        menu.classList.remove("hiding");
+    }, 300);
+}
+
+// --- Налаштування uPlot ---
 function initChart() {
-    const ctx = document.getElementById('myChart').getContext('2d');
-    myChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            datasets: [{
-                label: 'Signal',
-                data: [],
-                // borderColor: 'rgb(75, 192, 192)',
-                borderColor: 'rgb(245, 110, 174)',
-                borderWidth: 2,
-                pointRadius: 0,
-                tension: 0, // Трохи згладимо лінію
-                stepped: false,
-                fill: false
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: false,
-            parsing: false,
-            interaction: { intersect: false },
-            scales: {
-                x: {
-                    type: 'linear', // <--- ЗМІНЮЄМО ТИП ОСІ
-                    display: true,
-                },
-                y: { display: true }
+    const opts = {
+        title: "Signal",
+        width: document.getElementsByClassName("chart-container")[0].clientWidth,
+        height: window.innerHeight * 0.6, // 60% висоти екрану
+
+        scales: {
+            x: {
+                time: false, // У нас просто лічильник, не дати
+            },
+            y: {
+                auto: false, // Вимикаємо авто-масштаб
+                range: [-yAxisRange, yAxisRange] // Фіксуємо межі
             }
-        }
+        },
+        series: [
+            {}, // Перша серія - це вісь X (завжди)
+            {
+                label: "Voltage",
+                stroke: "rgb(245, 110, 174)", // Ваш рожевий колір
+                width: 2,
+                spanGaps: true // Оптимізація розривів
+            }
+        ],
+        axes: [
+            {
+                // Налаштування осі X
+                show: true,
+                stroke: "#ccc",
+                grid: { show: true, stroke: "#333", width: 1 }
+            },
+            {
+                // Налаштування осі Y
+                show: true,
+                stroke: "#ccc",
+                grid: { show: true, stroke: "#333", width: 1 }
+            }
+        ]
+    };
+
+    let chartDiv = document.getElementById('myChart');
+    uplot = new uPlot(opts, [dataX, dataY], chartDiv);
+
+    // Реакція на зміну розміру вікна
+    window.addEventListener("resize", e => {
+        uplot.setSize({
+            width: document.getElementsByClassName("chart-container")[0].clientWidth,
+            height: window.innerHeight * 0.6
+        });
     });
 }
 
-// Функція для динамічної зміни Y без перестворення графіка
-function updateYScale() {
-    if (myChart) {
-        myChart.options.scales.y.min = -yAxisRange;
-        myChart.options.scales.y.max = yAxisRange;
-        myChart.update('none'); // 'none' для швидкодії (без анімації)
-    }
-}
-
-// --- 2. WebSocket ---
+// --- WebSocket ---
 function initWebSocket() {
     console.log('Connecting to WebSocket...');
     websocket = new WebSocket(gateway);
     websocket.binaryType = "arraybuffer";
+
     websocket.onopen = () => console.log('Connection opened');
-    websocket.onclose = () => setTimeout(initWebSocket, 2000);
+
+    websocket.onclose = () => {
+        console.log('Connection closed');
+        setTimeout(initWebSocket, 2000);
+    };
 
     websocket.onmessage = function (event) {
         if (event.data instanceof ArrayBuffer) {
             const points = new Uint16Array(event.data);
-
-            // let newLabels = [];
-            let newData = [];
             let lastValue = 0;
 
-            points.forEach(function (point) {
-                var dataVal = ((point * 10) / 4095) - 5;
-                // var dataVal = point;
+            // 1. Оптимізований цикл обробки
+            // Якщо пакет великий (наприклад 4096), додавання по одному повільне.
+            // Але для JS це норм. Головне - не перемальовувати графік всередині циклу.
 
-
+            for (let i = 0; i < points.length; i++) {
+                // Масштабування значення
+                let dataVal = ((points[i] * 10) / 4095) - 5;
                 lastValue = dataVal;
-                var isRisingEdge = (prevVal < threshold && dataVal >= threshold);
 
+                // Ваша логіка тригера
+                let isRisingEdge = (prevVal < threshold && dataVal >= threshold);
                 if (isRisingEdge) {
-                    if (st == 0) {
-                        st = 1;
-                        cu = 0;
-                    }
-                    else if (st == 1 && cu > 10) {
-                        st = 2;
-                    }
+                    if (st == 0) { st = 1; cu = 0; }
+                    else if (st == 1 && cu > 10) { st = 2; }
                 }
-
-                if (st == 1) {
-                    cu++;
-                }
-
+                if (st == 1) cu++;
                 prevVal = dataVal;
 
-                lastValue = dataVal; // для відображення цифри
+                // ДОДАЄМО В МАСИВИ (тільки якщо не на паузі)
+                if (stop == 0) {
+                    dataX.push(globalX++);
+                    dataY.push(dataVal);
+                }
+            }
 
-                // newLabels.push(""); <--- ВИДАЛЯЄМО
-
-                // ДОДАЄМО ТОЧКУ З КООРДИНАТОЮ X
-                newData.push({ x: globalX++, y: dataVal });
-            });
             if (stop == 0) {
-                // 1. Оновлюємо цифру НА ЕКРАНІ (1 раз за пакет, а не 100)
-                document.getElementById('sensorValue').innerHTML = lastValue;
+                // 2. Оновлюємо цифру
+                document.getElementById('sensorValue').innerHTML = lastValue.toFixed(2);
 
-                // myChart.data.labels.push(...newLabels);
-                myChart.data.datasets[0].data.push(...newData);
-
-                let currentLength = myChart.data.datasets[0].data.length;
-
-                if (currentLength > maxDataPoints) {
-                    let pointsToRemove = currentLength - maxDataPoints;
-                    myChart.data.datasets[0].data.splice(0, pointsToRemove);
+                // 3. Обрізаємо масиви (аналог splice, але для двох масивів)
+                // Щоб графік "їхав", видаляємо старі точки
+                if (dataX.length > maxDataPoints) {
+                    let pointsToRemove = dataX.length - maxDataPoints;
+                    // slice швидше за splice для великих масивів
+                    // Ми просто беремо "хвіст" масиву
+                    dataX = dataX.slice(pointsToRemove);
+                    dataY = dataY.slice(pointsToRemove);
                 }
 
+                // 4. Ставимо прапорець для renderLoop
                 needsUpdate = true;
             }
-        }
-        else {
-            document.getElementById("sensorValue").innerText = event.data;
-            if (event.data == "WiFi OK!") {
-                document.getElementById("setmenu").style.display = "none";
-                document.getElementById("sen").style.display = "none";
-                location.reload();
 
-
-            }
-
-            if (event.data == "Успіх! Перезавантаження...") {
-                // document.getElementById("setmenu").style.display = "none";
-                location.reload();
-            }
-
-
-
-
+        } else {
+            // Текстові повідомлення (WiFi статус тощо)
+            handleTextMessage(event.data);
         }
     };
 }
-function updateChart(val) {
-    // const now = new Date(); // Більше не потрібно для осі X
 
-    myChart.data.datasets[0].data.push({ x: globalX++, y: val });
-
-    // ВИПРАВЛЕНО: Перевіряємо довжину даних
-    while (myChart.data.datasets[0].data.length > maxDataPoints) {
-        myChart.data.datasets[0].data.shift();
+function handleTextMessage(msg) {
+    document.getElementById("sensorValue").innerText = msg;
+    if (msg == "WiFi OK!" || msg == "Успіх! Перезавантаження...") {
+        document.getElementById("setmenu").style.display = "none";
+        document.getElementById("sen").style.display = "none";
+        // location.reload(); // Можна розкоментувати якщо треба
     }
-    myChart.update('none');
 }
 
-// document.getElementById('BtnT').addEventListener('click', function () {
-//     const Tc = (Number(document.getElementById('InputT').value)) + 1;
-//     maxDataPoints = 1;
-//     for (let i = 1; i < Tc; i++) {
-//         maxDataPoints += cu;
-//     }
-//     Tbt = 0;
-// });
+// --- Керування ---
 
+// Масштаб Y
+const rangeY = document.getElementById('rangeY');
+const labelY = document.getElementById('labelY'); // Створив span в HTML
 
+rangeY.addEventListener('input', function () {
+    yAxisRange = Number(this.value);
+    // Оновлюємо підпис (якщо ви додали span з id="labelY")
+    if (labelY) labelY.innerText = yAxisRange;
 
-// document.getElementById('settings').addEventListener('click', function () {
-//     document.getElementById("setmenu").style.display = "flex";
-//     // document.getElementById("v").style.display = "flex";
+    // В uPlot масштабування робиться так:
+    if (uplot) {
+        uplot.setScale('y', { min: -yAxisRange, max: yAxisRange });
+    }
+});
 
-// });
+// Масштаб X (Timebase)
+const rangeX = document.getElementById('rangeX');
+const labelX = document.getElementById('labelX'); // Створив span в HTML
+
+rangeX.addEventListener('input', function () {
+    maxDataPoints = Number(this.value);
+    if (labelX) labelX.innerText = maxDataPoints;
+
+    // При зменшенні масштабу X треба обрізати масиви негайно
+    if (dataX.length > maxDataPoints) {
+        let start = dataX.length - maxDataPoints;
+        dataX = dataX.slice(start);
+        dataY = dataY.slice(start);
+        needsUpdate = true;
+    }
+});
+
+// Кнопка паузи (клік по графіку)
+document.getElementsByClassName("chart-container")[0].addEventListener('click', function () {
+    stop = !stop; // Перемикач 0/1
+});
+
+// Відкриття меню (подвійний клік)
+document.getElementsByClassName("chart-container")[0].addEventListener('dblclick', function () {
+    if (root == 1) {
+        document.getElementById("form-block").style.display = "block";
+        document.getElementById("sen").style.display = "none";
+        document.getElementById("setmenu").style.display = "flex";
+    }
+});
 
 document.getElementById('setmenu').addEventListener('dblclick', function () {
-    // document.getElementById("setmenu").style.display = "none";
     closeMenu();
 });
 
-document.getElementsByClassName("chart-container")[0].addEventListener('click', function () {
-    if (stop == 0) {
-        stop = 1;
-        // document.getElementById('BTStop').textContent = "Продовжити";
-    }
-    else {
-        stop = 0;
-        // document.getElementById('BTStop').textContent = "Зупинити";
-    }
-});
-
-
-// document.getElementsByClassName("chart-container")[0].addEventListener('click', function () {
-//     if (stop == 0) {
-//         stop = 1;
-//         // document.getElementById('BTStop').textContent = "Продовжити";
-//     }
-//     else {
-//         stop = 0;
-//         // document.getElementById('BTStop').textContent = "Зупинити";
-//     }
-// });
-
-
-document.getElementsByClassName("chart-container")[0].addEventListener('dblclick', function () {
-    if (root == 1) {
-        // Скидаємо вигляд меню при відкритті
-        document.getElementById("form-block").style.display = "block"; // Показуємо форму
-        document.getElementById("sen").style.display = "none";         // Ховаємо лоадер
-
-        document.getElementById("setmenu").style.display = "flex";
-    }
-
-});
-
-
+// WiFi функції
 function sendWifi() {
     const ssid = document.getElementById("ssid").value;
     const pass = document.getElementById("pass").value;
-
-    if (!ssid) {
-        alert("SSID не може бути порожнім");
-        return;
-    }
-
     if (websocket.readyState === WebSocket.OPEN) {
-        // ХОВАЄМО ТІЛЬКИ ПОЛЯ, А НЕ ВСЮ КАРТКУ
         document.getElementById("form-block").style.display = "none";
-
-        // ПОКАЗУЄМО ЛОАДЕР
         document.getElementById("sen").style.display = "block";
-
-        websocket.send(JSON.stringify({
-            line1: ssid,
-            line2: pass
-        }));
+        websocket.send(JSON.stringify({ line1: ssid, line2: pass }));
     } else {
-        alert("WebSocket не підключений");
+        alert("WebSocket disconnect");
     }
 }
 
 function conWifi() {
     const ssid = document.getElementById("ssid").value;
     const pass = document.getElementById("pass").value;
-
-    if (!ssid) {
-        alert("SSID не може бути порожнім");
-        return;
-    }
-
     if (websocket.readyState === WebSocket.OPEN) {
-        // ХОВАЄМО ТІЛЬКИ ПОЛЯ
         document.getElementById("form-block").style.display = "none";
-
-        // ПОКАЗУЄМО ЛОАДЕР
         document.getElementById("sen").style.display = "block";
-
-        websocket.send(JSON.stringify({
-            conSSID: ssid,
-            conPASS: pass
-        }));
+        websocket.send(JSON.stringify({ conSSID: ssid, conPASS: pass }));
     } else {
-        alert("WebSocket не підключений");
+        alert("WebSocket disconnect");
     }
 }
-
-
-// Знаходимо елементи
-const rangeY = document.getElementById('rangeY');
-const rangeX = document.getElementById('rangeX');
-const labelY = document.getElementById('rangeY');
-const labelX = document.getElementById('rangeX');
-
-// --- Обробка зміни масштабу Y ---
-rangeY.addEventListener('input', function () {
-    // 1. Оновлюємо змінну
-    yAxisRange = Number(this.value);
-
-    // 2. Оновлюємо підпис
-    labelY.innerText = -yAxisRange;
-
-    // myChart.options.scales.y.min = -yAxisRange;
-    //     myChart.options.scales.y.max = yAxisRange;
-
-    // 3. Викликаємо вашу функцію оновлення осі
-    updateYScale();
-});
-
-// --- Обробка зміни масштабу X ---
-rangeX.addEventListener('input', function () {
-    // 1. Оновлюємо змінну конфігурації
-    maxDataPoints = Number(this.value);
-
-    // 2. Оновлюємо підпис
-    labelX.innerText = maxDataPoints;
-
-    // 3. Миттєво обрізаємо графік
-    if (stop == 0) {
-        // ВИПРАВЛЕНО: Дивимось на довжину даних, а не labels
-        let currentLength = myChart.data.datasets[0].data.length;
-
-        if (currentLength > maxDataPoints) {
-            let pointsToRemove = currentLength - maxDataPoints;
-
-            // ВИПРАВЛЕНО: Видаляємо тільки з datasets, labels не чіпаємо
-            myChart.data.datasets[0].data.splice(0, pointsToRemove);
-
-            needsUpdate = true;
-        }
-    }
-});

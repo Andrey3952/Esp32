@@ -245,8 +245,8 @@ void setup()
   server.begin();
 }
 // --- НАЛАШТУВАННЯ ---
-#define SAMPLING_DELAY_MICROS 16667 // 60 Гц (частота збору даних)
-#define SAMPLES_PER_PACKET 500      // Розмір пачки (буфер)
+#define SAMPLING_DELAY_MICROS 40 // 60 Гц (частота збору даних)
+#define SAMPLES_PER_PACKET 1024  // Розмір пачки (буфер)
 
 // Глобальні змінні
 uint16_t packetBuffer[SAMPLES_PER_PACKET];
@@ -274,34 +274,38 @@ void loop()
     unsigned long currentMicros = micros();
 
     if (currentMicros - previousMicros >= SAMPLING_DELAY_MICROS)
-    {
-      // ЗАХИСТ ВІД НАКОПИЧЕННЯ ЧЕРГИ (якщо відстали більше ніж на 1 кадр - просто скидаємо таймер)
-      if (currentMicros - previousMicros > SAMPLING_DELAY_MICROS * 2)
+    { // Замість поциклового читання в loop, робимо це одним блоком:
+      if (currentMicros - previousMicros >= (SAMPLING_DELAY_MICROS * SAMPLES_PER_PACKET))
       {
         previousMicros = currentMicros;
-      }
-      else
-      {
-        previousMicros += SAMPLING_DELAY_MICROS;
-      }
 
-      // ... SPI читання ...
+        digitalWrite(pin_SS, LOW);
 
-      digitalWrite(pin_SS, LOW);
-      uint16_t rawResult = SPI.transfer16(0x0000);
-      digitalWrite(pin_SS, HIGH);
+        // NULL в першому аргументі означає, що ми нічого не відправляємо (MOSI ігнорується)
+        // Дані з MISO запишуться прямо в packetBuffer
+        SPI.transferBytes(NULL, (uint8_t *)packetBuffer, SAMPLES_PER_PACKET * 2);
 
-      packetBuffer[packetIndex] = rawResult & 0x0FFF;
-      packetIndex++;
+        digitalWrite(pin_SS, HIGH);
 
-      if (packetIndex >= SAMPLES_PER_PACKET)
-      {
-        // ВАЖЛИВО: Перевіряємо, чи можна відправляти, щоб не забити буфер
+        // Оскільки ESP32 — Little Endian, а SPI зазвичай Big Endian,
+        // можливо знадобиться поміняти байти місцями (Endianness swap),
+        // якщо графік буде виглядати як "шум".
+
         if (ws.availableForWriteAll())
         {
+          for (int i = 0; i < SAMPLES_PER_PACKET; i++)
+          {
+            uint16_t raw = packetBuffer[i];
+
+            // 1. Обов'язково міняємо байти місцями
+            uint16_t swapped = (raw >> 8) | (raw << 8);
+
+            // 2. Маскуємо 12 біт.
+            // ЯКЩО ПІСЛЯ ЦЬОГО ЧИСЛА ВСЕ ОДНО ДИВНІ - спробуйте (swapped >> 4)
+            packetBuffer[i] = swapped & 0x0FFF;
+          }
           ws.binaryAll((uint8_t *)packetBuffer, SAMPLES_PER_PACKET * 2);
         }
-        packetIndex = 0;
       }
     }
   }
