@@ -273,39 +273,27 @@ void loop()
   {
     unsigned long currentMicros = micros();
 
-    if (currentMicros - previousMicros >= SAMPLING_DELAY_MICROS)
-    { // Замість поциклового читання в loop, робимо це одним блоком:
-      if (currentMicros - previousMicros >= (SAMPLING_DELAY_MICROS * SAMPLES_PER_PACKET))
+    if (currentMicros - previousMicros >= (SAMPLING_DELAY_MICROS * SAMPLES_PER_PACKET))
+    {
+      previousMicros = currentMicros;
+      if (ws.availableForWriteAll())
       {
-        previousMicros = currentMicros;
-
-        digitalWrite(pin_SS, LOW);
-
-        // NULL в першому аргументі означає, що ми нічого не відправляємо (MOSI ігнорується)
-        // Дані з MISO запишуться прямо в packetBuffer
-        SPI.transferBytes(NULL, (uint8_t *)packetBuffer, SAMPLES_PER_PACKET * 2);
-
-        digitalWrite(pin_SS, HIGH);
-
-        // Оскільки ESP32 — Little Endian, а SPI зазвичай Big Endian,
-        // можливо знадобиться поміняти байти місцями (Endianness swap),
-        // якщо графік буде виглядати як "шум".
-
-        if (ws.availableForWriteAll())
+        for (int i = 0; i < SAMPLES_PER_PACKET; i++)
         {
-          for (int i = 0; i < SAMPLES_PER_PACKET; i++)
-          {
-            uint16_t raw = packetBuffer[i];
+          digitalWrite(pin_SS, LOW);
+          // Невелика пауза, щоб ПЛІС виставила стабільний біт
 
-            // 1. Обов'язково міняємо байти місцями
-            uint16_t swapped = (raw >> 8) | (raw << 8);
+          uint16_t raw = SPI.transfer16(0x0000);
 
-            // 2. Маскуємо 12 біт.
-            // ЯКЩО ПІСЛЯ ЦЬОГО ЧИСЛА ВСЕ ОДНО ДИВНІ - спробуйте (swapped >> 4)
-            packetBuffer[i] = swapped & 0x0FFF;
-          }
-          ws.binaryAll((uint8_t *)packetBuffer, SAMPLES_PER_PACKET * 2);
+          digitalWrite(pin_SS, HIGH); // ПЛІС бачить цей фронт і робить rd_addr++
+
+          // Обробка
+          // uint16_t corrected = raw >> 1;
+          packetBuffer[i] = raw & 0x0FFF; // Тепер дані будуть відповідати файлу
+
+          // Маленька пауза між транзакціями для стабільності
         }
+        ws.binaryAll((uint8_t *)packetBuffer, SAMPLES_PER_PACKET * 2);
       }
     }
   }
