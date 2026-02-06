@@ -1,5 +1,5 @@
-// var gateway = `ws://${window.location.hostname}/ws`;
-var gateway = `ws://192.168.0.176/ws`;
+var gateway = `ws://${window.location.hostname}/ws`;
+// var gateway = `ws://192.168.0.176/ws`;
 var websocket;
 var uplot; // Об'єкт графіка
 
@@ -254,4 +254,5 @@ function conWifi() {
     } else {
         alert("WebSocket disconnect");
     }
+
 }
